@@ -1,0 +1,37 @@
+method:
+  template_program_path: "examples/online_bin_packing/template_algo.txt"
+  task_description_path: "examples/online_bin_packing/task_description.txt"
+  language: "python"
+  num_samplers: 2
+  num_evaluators: 2
+  examples_per_prompt: 2
+  samples_per_prompt: 2
+  max_samples: 100
+  llm_max_tokens: 1024
+  llm_timeout_seconds: 120
+  db_num_islands: 5
+  db_max_island_capacity: null
+  db_reset_period: 14400
+  db_cluster_sampling_temperature_init: 0.1
+  db_cluster_sampling_temperature_period: 30000
+  db_save_frequency: 50
+  keep_metadata_keys: ["sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
+  debug_mode: false
+  debug_mode_crash: false
+
+llm:
+  class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+  kwargs:
+    model: "gpt-4o-mini"
+    # TODO: Replace with your API key, or set OPENAI_API_KEY environment variable
+    api_key: null
+    base_url: "https://api.openai.com/v1"
+
+evaluator:
+  class_path: "examples.online_bin_packing.evaluator.OnlineBinPackingEvaluator"
+  kwargs: {}
+
+logger:
+  class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
+  kwargs:
+    logdir: "logs/online_bin_packing"

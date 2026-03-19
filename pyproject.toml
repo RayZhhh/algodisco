@@ -1,0 +1,92 @@
+[build-system]
+requires = [
+    "setuptools>=61.0",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "algodisco"
+version = "0.1.0"
+description = "AlgoDisco: Algorithm Discovery - LLM-driven Algorithm Search Framework"
+license = { text = "MIT" }
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.11"
+authors = [
+    { name = "Rui Zhang" }
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "openai",
+    "pyyaml",
+    "psutil",
+    "tree_sitter",
+    "tree_sitter_python",
+    "requests",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "mypy",
+]
+claude = [
+    "anthropic",
+]
+vllm = [
+    "vllm",
+]
+sglang = [
+    "sglang",
+]
+wandb = [
+    "wandb",
+]
+swanlab = [
+    "swanlab",
+]
+ray = [
+    "ray",
+]
+codebleu = [
+    "tree_sitter_java",
+    "tree_sitter_javascript",
+    "tree_sitter_c",
+    "tree_sitter_cpp",
+    "tree_sitter_go",
+    "tree_sitter_ruby",
+    "tree_sitter_rust",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["algodisco*"]
+
+[tool.setuptools.package-data]
+algodisco.third_party.codebleu = ["keywords/*.txt", "py.typed"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "UP", "B", "I", "G"]
+ignore = ["F405", "F403", "E731", "B007", "UP032", "G004", "UP045", "UP035"]
+
+[tool.mypy]
+pretty = true
+ignore_missing_imports = true
+explicit_package_bases = true
+follow_imports = "skip"

@@ -1,0 +1,47 @@
+method:
+  template_program_path: "path/to/template.py"
+  task_description_path: "path/to/task_description.txt"
+  language: "python"
+  diff_based_evolution: false
+  num_top_programs: 1
+  num_diverse_programs: 1
+  include_artifacts: false
+  num_samplers: 4
+  num_evaluators: 4
+  exploration_ratio: 0.2
+  exploitation_ratio: 0.7
+  elite_selection_ratio: 0.1
+  samples_per_prompt: 1
+  max_samples: 1000
+  llm_max_tokens: 1024
+  llm_timeout_seconds: 120
+  db_num_islands: 10
+  db_reset_period: 14400
+  db_save_frequency: 100
+  feature_dimensions:
+    - "complexity"
+    - "diversity"
+  feature_bins: 10
+  diversity_reference_size: 20
+  archive_size: 100
+  migration_interval: 50
+  migration_rate: 0.1
+  keep_metadata_keys: ["sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
+  debug_mode: false
+  debug_mode_crash: false
+
+llm:
+  class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+  kwargs:
+    model: "gpt-3.5-turbo"
+    api_key: "your-api-key"
+    base_url: "https://api.openai.com/v1"
+
+evaluator:
+  class_path: "your_evaluator_module.YourEvaluator"
+  kwargs: {}
+
+logger:
+  class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
+  kwargs:
+    logdir: "logs/openevolve_log"

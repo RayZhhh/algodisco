@@ -1,0 +1,10 @@
+Online Bin Packing Problem
+
+## Task Description
+
+Given a stream of items with varying sizes, you need to design a priority function that determines which bin each item should be placed into. The goal is to minimize the total number of bins used.
+
+## Problem Formulation
+
+- **Input**: An item size `item` (float) and an array of bin capacities `bins` (numpy array)
+- **Output**: An array of priority scores (same size as `bins`) - higher score means the item should be placed in that bin
