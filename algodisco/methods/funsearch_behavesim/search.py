@@ -23,9 +23,9 @@ from algodisco.base.logger import AlgoSearchLoggerBase
 from algodisco.common.timer import Timer
 from algodisco.common.logging_utils import format_time_info, format_error_box
 
-from algodisco.methods.behavesim_search.database import AlgoDatabase
-from algodisco.methods.behavesim_search.config import BehaveSimSearchConfig
-from algodisco.methods.behavesim_search.prompt import PromptAdapter
+from algodisco.methods.funsearch_behavesim.database import AlgoDatabase
+from algodisco.methods.funsearch_behavesim.config import BehaveSimSearchConfig
+from algodisco.methods.funsearch_behavesim.prompt import PromptAdapter
 
 # Configure basic logging.
 logging.basicConfig(
@@ -189,6 +189,15 @@ class BehaveSimSearch(IterativeSearchBase):
             self._config.max_samples is not None
             and self._samples_count >= self._config.max_samples
         )
+
+    @override
+    def current_num_samples(self) -> int:
+        with self._lock:
+            return self._samples_count
+
+    @override
+    def get_config(self) -> BehaveSimSearchConfig:
+        return self._config
 
     def _generate_evaluate_register_loop(self):
         """The main loop for a single sampler thread."""

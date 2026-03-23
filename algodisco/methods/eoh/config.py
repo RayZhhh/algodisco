@@ -4,18 +4,19 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, List
+from algodisco.base.search_method import SearchConfigBase
 
 
 class EoHOperators(Enum): ...
 
 
 @dataclass
-class EoHConfig:
+class EoHConfig(SearchConfigBase):
     """Configuration for an EoH (Evolution of Heuristics) Search run."""
 
     template_program: str
     task_description: str = ""
-    language: str = "python"
+    max_samples: Optional[int] = field(default=1000, kw_only=True)
 
     # Population parameters
     pop_size: int = 10
@@ -27,9 +28,6 @@ class EoHConfig:
     use_m2_operator: bool = True
 
     # Search parameters
-    num_samplers: int = 4
-    num_evaluators: int = 4
-    max_samples: Optional[int] = 1000
     llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
     db_save_frequency: Optional[int] = 100

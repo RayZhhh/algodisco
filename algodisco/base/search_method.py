@@ -2,8 +2,32 @@
 # Licensed under the MIT license.
 
 import abc
-from typing import Union, List, Optional
+import dataclasses
+from typing import Union, List, Optional, Literal
 from algodisco.base.algo import AlgoProto
+
+
+@dataclasses.dataclass()
+class SearchConfigBase:
+    max_samples: int = dataclasses.field(kw_only=True)
+    language: str = dataclasses.field(default="python", kw_only=True)
+    num_samplers: Union[int, Literal["auto"]] = dataclasses.field(
+        default="auto", kw_only=True
+    )
+    num_evaluators: Union[int, Literal["auto"]] = dataclasses.field(
+        default="auto", kw_only=True
+    )
+
+    def __post_init__(self):
+        import os
+
+        # Update num_samplers
+        if self.num_samplers == "auto":
+            self.num_samplers = os.cpu_count() // 2
+
+        # Update num_evaluators
+        if self.num_evaluators == "auto":
+            self.num_evaluators = os.cpu_count() // 4
 
 
 class IterativeSearchBase(abc.ABC):
@@ -47,4 +71,14 @@ class IterativeSearchBase(abc.ABC):
     @abc.abstractmethod
     def is_stopped(self) -> bool:
         """Returns True if the search termination criteria are met."""
+        pass
+
+    @abc.abstractmethod
+    def current_num_samples(self) -> int:
+        """Returns the current number of samples generated."""
+        pass
+
+    @abc.abstractmethod
+    def get_config(self) -> SearchConfigBase:
+        """Returns the current search configuration."""
         pass

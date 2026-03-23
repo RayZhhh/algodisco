@@ -3,18 +3,16 @@
 
 from dataclasses import dataclass, field
 from typing import Optional, List
+from algodisco.base.search_method import SearchConfigBase
 
 
 @dataclass
-class RandSampleConfig:
+class RandSampleConfig(SearchConfigBase):
     """Configuration for a RandSample run."""
 
     template_program: str
     task_description: str = ""
-    language: str = "python"
-    num_samplers: int = 4
-    num_evaluators: int = 4
-    max_samples: Optional[int] = 1000
+    max_samples: Optional[int] = field(default=1000, kw_only=True)
     llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
 

@@ -87,7 +87,7 @@ logger:
 
 运行:
 ```bash
-python algodisco/methods/behavesim_search/main_behavesim_search.py --config config.yaml
+python algodisco/methods/funsearch_behavesim/main_behavesim_search.py --config config.yaml
 ```
 
 ## API 参考

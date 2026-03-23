@@ -151,6 +151,15 @@ class OnePlusOneEPS(IterativeSearchBase):
             and self._samples_count >= self._config.max_samples
         )
 
+    @override
+    def current_num_samples(self) -> int:
+        with self._lock:
+            return self._samples_count
+
+    @override
+    def get_config(self) -> OnePlusOneEPSConfig:
+        return self._config
+
     def _generate_evaluate_register_loop(self):
         """The main loop for a single sampler thread."""
         while not self.is_stopped():

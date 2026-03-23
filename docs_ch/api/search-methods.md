@@ -222,8 +222,8 @@ class RandSampleConfig:
 ## BehaveSim
 
 ```python
-from algodisco.methods.behavesim_search.search import BehaveSim
-from algodisco.methods.behavesim_search.config import BehaveSimConfig
+from algodisco.methods.funsearch_behavesim.search import BehaveSim
+from algodisco.methods.funsearch_behavesim.config import BehaveSimConfig
 ```
 
 ### BehaveSimConfig

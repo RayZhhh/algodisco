@@ -23,7 +23,7 @@ from algodisco.common.timer import Timer
 from algodisco.common.logging_utils import format_time_info, format_error_box
 
 from algodisco.methods.openevolve.config import OpenEvolveConfig
-from algodisco.methods.openevolve.database import ProgramDatabase
+from algodisco.methods.openevolve.database import ProgramDatabase, get_fitness_score
 from algodisco.methods.openevolve.prompt import PromptConstructor
 
 logging.basicConfig(
@@ -32,7 +32,7 @@ logging.basicConfig(
 
 
 class OpenEvolve(IterativeSearchBase):
-    """Core class for the OpenEvolve process, using threading."""
+    """Drive threaded sampling, evaluation, registration, and logging."""
 
     def __init__(
         self,
@@ -58,15 +58,30 @@ class OpenEvolve(IterativeSearchBase):
         self._database = ProgramDatabase(config)
         self._logger = logger
 
+        # Prompt construction is kept modular so prompt behavior can evolve
+        # without changing the outer search interface.
         self._prompt_constructor = prompt_constructor or PromptConstructor(
             config=self._config
         )
 
         self._lock = threading.Lock()
+        # `_samples_count` counts registered candidates plus the initial template.
         self._samples_count = 0
+        # Limit concurrent evaluator calls independently from sampler count.
         self._evaluator_semaphore = threading.Semaphore(self._config.num_evaluators)
         self._stop_event = threading.Event()
         self._executor = ThreadPoolExecutor(max_workers=self._config.num_samplers)
+        # Track in-flight work per island so scheduling stays balanced even
+        # though this implementation uses threads instead of worker processes.
+        self._island_pending = [0 for _ in range(self._config.db_num_islands)]
+        self._batch_per_island = max(
+            1,
+            min(
+                self._config.num_samplers * 2,
+                self._config.max_samples or self._config.num_samplers * 2,
+            )
+            // max(1, self._config.db_num_islands),
+        )
 
         # Debug mode: print all errors during search (can be set after instantiation)
         # When True, errors are logged at ERROR level instead of WARNING
@@ -79,6 +94,8 @@ class OpenEvolve(IterativeSearchBase):
         if not self._logger:
             return
 
+        # Database snapshots are logged separately from per-algorithm entries so
+        # island state can be reconstructed after the run.
         database_dict = self._database.to_dict()
         database_dict["sample_num"] = sample_num
         self._logger.log_dict_sync(database_dict, "database")
@@ -105,6 +122,8 @@ class OpenEvolve(IterativeSearchBase):
             language=self._config.language,
         )
 
+        # The template program is evaluated once up front so the search always
+        # starts from one valid baseline in the database.
         with Timer(template_proto, "eval_time"):
             results = self._evaluator.evaluate_program(template_proto.program)
 
@@ -113,16 +132,24 @@ class OpenEvolve(IterativeSearchBase):
 
         # handle results dict or object
         if isinstance(results, dict):
-            template_proto.score = results.get("score")
             template_proto["metrics"] = results
+            template_proto["evaluator_score"] = results.get("score")
+            template_proto["fitness_score"] = get_fitness_score(
+                results, self._config.feature_dimensions
+            )
+            template_proto.score = results.get("score")
         else:
             template_proto.score = results
             template_proto["metrics"] = {"score": results}
+            template_proto["fitness_score"] = results
 
+        # Register the template before logging so the logger can include island
+        # state derived from the database snapshot.
         self._database.register_program(template_proto)
 
         with self._lock:
             self._samples_count += 1
+            # Keep the template out of island accounting in terminal/log output.
             template_proto["island_id"] = -1
             self._log(template_proto, is_template=True)
 
@@ -132,11 +159,6 @@ class OpenEvolve(IterativeSearchBase):
             self.initialize()
 
             logging.info(f"Starting {self._config.num_samplers} sampler threads...")
-
-            # Start migration thread
-            migration_thread = threading.Thread(target=self._migration_loop)
-            migration_thread.daemon = True
-            migration_thread.start()
 
             # Start sampler threads
             threads = []
@@ -172,21 +194,6 @@ class OpenEvolve(IterativeSearchBase):
                 self._logger.finish_sync()
             logging.info("Search finished.")
 
-    def _migration_loop(self):
-        """Periodically triggers migration in the database based on sample count."""
-        last_migration_at = 0
-        while not self.is_stopped():
-            current_samples = self._samples_count
-            if current_samples - last_migration_at >= self._config.migration_interval:
-                if current_samples > 0:
-                    logging.info(
-                        f"Triggering migration at {current_samples} samples..."
-                    )
-                    self._database.migrate()
-                    last_migration_at = current_samples
-
-            time.sleep(5)  # Check every 5 seconds
-
     @override
     def is_stopped(self) -> bool:
         """Checks if the search should be stopped based on the max samples or stop event."""
@@ -195,14 +202,30 @@ class OpenEvolve(IterativeSearchBase):
             and self._samples_count >= self._config.max_samples
         )
 
+    @override
+    def current_num_samples(self) -> int:
+        with self._lock:
+            return self._samples_count
+
+    @override
+    def get_config(self) -> OpenEvolveConfig:
+        return self._config
+
     def _sample_evaluate_register_loop(self):
-        """The main loop for a single sampler thread."""
+        """
+        Run the full candidate lifecycle inside one sampler thread.
+
+        Each loop reserves a target island, builds prompt context, samples one or
+        more completions, evaluates the resulting code, and registers successful
+        candidates back into the database.
+        """
         while not self.is_stopped():
             with self._lock:
                 if self.is_stopped():
                     self._stop_event.set()
                     break
 
+            candidate = None
             try:
                 # Select parents, create prompt and return a NEW AlgoProto
                 candidate = self.select_and_create_prompt()
@@ -214,6 +237,8 @@ class OpenEvolve(IterativeSearchBase):
                     if self.is_stopped():
                         break
                     _candidate = copy.deepcopy(candidate)
+                    # Each completion attempt starts from the same prompt context
+                    # so one parent selection can yield multiple sibling trials.
                     # Generate raw response (updates candidate in-place)
                     _candidate = self.generate(_candidate)
                     # Extract algo from response (updates candidate in-place)
@@ -233,13 +258,18 @@ class OpenEvolve(IterativeSearchBase):
 
                     # Evaluate (updates candidate in-place)
                     _candidate = self.evaluate(_candidate)
-                    # Register
+                    # Registration handles bookkeeping, migration checks, and logging.
                     self.register(_candidate)
+                self._release_sampling_island(candidate.get("target_island"))
 
             except (KeyboardInterrupt, SystemExit):
+                if candidate:
+                    self._release_sampling_island(candidate.get("target_island"))
                 self._stop_event.set()
                 break
             except Exception as e:
+                if candidate:
+                    self._release_sampling_island(candidate.get("target_island"))
                 logging.warning(
                     f"Exception in sampler thread: {traceback.format_exc()}"
                 )
@@ -254,6 +284,53 @@ class OpenEvolve(IterativeSearchBase):
                         sys.exit(1)
                 time.sleep(5)
 
+    def _reserve_sampling_island(self) -> int:
+        """Reserve the least-loaded island for the next sampling task."""
+        with self._lock:
+            # Keep outstanding work spread across islands so one hot island does
+            # not consume all sampler capacity.
+            eligible_islands = [
+                island_id
+                for island_id, pending in enumerate(self._island_pending)
+                if pending < self._batch_per_island
+            ]
+            candidate_islands = eligible_islands or list(range(len(self._island_pending)))
+            island_id = min(candidate_islands, key=lambda idx: (self._island_pending[idx], idx))
+            self._island_pending[island_id] += 1
+            return island_id
+
+    def _release_sampling_island(self, island_id: Optional[int]) -> None:
+        """Release a previously reserved island after sampling work finishes."""
+        if island_id is None or island_id < 0:
+            return
+        with self._lock:
+            if island_id < len(self._island_pending) and self._island_pending[island_id] > 0:
+                self._island_pending[island_id] -= 1
+
+    def _collapse_candidate_parents(self, candidate: AlgoProto) -> None:
+        """Replace transient parent objects with compact scalar metadata."""
+        parents = candidate.get("parents") or []
+        if not parents:
+            return
+
+        parent = parents[0]
+        parent_id = parent.get("algo_id") if isinstance(parent, AlgoProto) else None
+        parent_island_id = parent.get("island_id") if isinstance(parent, AlgoProto) else None
+        parent_metrics = (
+            copy.deepcopy(parent.get("metrics", {}) or {})
+            if isinstance(parent, AlgoProto)
+            else {}
+        )
+
+        if parent_id is not None:
+            candidate["parent_id"] = parent_id
+        if parent_island_id is not None:
+            candidate["parent_island_id"] = parent_island_id
+        if parent_metrics and not candidate.get("parent_metrics"):
+            candidate["parent_metrics"] = parent_metrics
+
+        candidate.pop("parents", None)
+
     @override
     def select_and_create_prompt(self) -> Optional[AlgoProto]:
         """Selects parents from the database and returns a NEW AlgoProto.
@@ -261,31 +338,44 @@ class OpenEvolve(IterativeSearchBase):
         The returned AlgoProto acts as a 'candidate' container for the entire lifecycle.
         It starts with 'parents', 'island_id', and 'prompt' populated in its attributes.
         """
-        # 1. Select parent program from an island
-        parent_programs, island_id = self._database.select_programs(1)
+        target_island = self._reserve_sampling_island()
+        parent, inspirations, target_island = self._database.sample_from_island(
+            target_island,
+            self._config.num_diverse_programs,
+        )
 
-        if not parent_programs:
+        if not parent:
+            self._release_sampling_island(target_island)
             return None
 
-        parent = parent_programs[0]
-
-        # 2. Select context programs (Top Performing and Inspirations/Diverse)
-        top_programs = self._database.get_top_programs(self._config.num_top_programs)
-
-        # Select inspirations (simply by selecting more from random islands)
-        # In full OpenEvolve, this is more complex, but this maintains the principle.
-        inspirations, _ = self._database.select_programs(
-            self._config.num_diverse_programs
+        # Keep the destination island for registration, but build prompt context
+        # from the sampled parent's island if parent selection had to fall back
+        # to the global population.
+        context_island = parent.get("island_id", target_island)
+        previous_programs = self._database.get_top_programs(
+            3,
+            island_id=context_island,
+        )
+        top_programs = self._database.get_top_programs(
+            self._config.num_top_programs,
+            island_id=context_island,
         )
 
         # 3. Create a NEW AlgoProto for this candidate
         candidate = AlgoProto(language=self._config.language)
         candidate["parents"] = [parent]
-        candidate["island_id"] = island_id
+        candidate["island_id"] = target_island
+        candidate["target_island"] = target_island
+        candidate["context_island"] = context_island
+        candidate["parent_metrics"] = parent.get("metrics", {})
 
-        # 4. Construct Modular Prompt (Restored logic)
+        # Reuse island-local top programs as the "previous attempts" context so
+        # prompts emphasize nearby search history rather than distant lineage.
         prompt_dict = self._prompt_constructor.construct_prompt(
-            parent=parent, top_programs=top_programs, inspirations=inspirations
+            parent=parent,
+            top_programs=top_programs,
+            inspirations=inspirations,
+            previous_programs=previous_programs,
         )
 
         # Store as string for the LLM chat_completion interface
@@ -296,7 +386,7 @@ class OpenEvolve(IterativeSearchBase):
     def extract_algo_from_response(self, candidate: AlgoProto) -> AlgoProto:
         """Parses 'response_text' and updates 'candidate.program' in-place.
 
-        Uses the parent in 'candidate.parents' as the original code for parser.
+        Uses the parent in 'candidate.parents' as the baseline code for diff application.
         """
         response_text = candidate.get("response_text", "")
         parents = candidate.get("parents")
@@ -309,6 +399,9 @@ class OpenEvolve(IterativeSearchBase):
 
         if new_code_str:
             candidate.program = new_code_str
+            candidate["changes_summary"] = self._prompt_constructor.summarize_changes(
+                response_text
+            )
         return candidate
 
     @override
@@ -340,6 +433,9 @@ class OpenEvolve(IterativeSearchBase):
 
         with Timer(candidate, "eval_time"):
             with self._evaluator_semaphore:
+                # The evaluator is the only step that may need explicit
+                # concurrency throttling because it can be far more expensive
+                # than prompt generation or database insertion.
                 results = self._evaluator.evaluate_program(candidate.program)
 
         if results is not None:
@@ -350,11 +446,26 @@ class OpenEvolve(IterativeSearchBase):
                 if "error_msg" in results:
                     candidate["error_msg"] = results["error_msg"]
                 candidate["metrics"] = results
+                candidate["parent_metrics"] = (
+                    candidate.get("parents")[0].get("metrics", {})
+                    if candidate.get("parents")
+                    else {}
+                )
+                candidate["evaluator_score"] = results.get("score")
+                candidate["fitness_score"] = get_fitness_score(
+                    results, self._config.feature_dimensions
+                )
+                # Preserve the evaluator's raw score separately from the search
+                # fitness so logs and downstream consumers can inspect both.
                 candidate.score = results.get("score")
             else:
                 candidate.score = results
                 candidate["metrics"] = {"score": results}
+                candidate["fitness_score"] = results
 
+        # Parent code is only needed until extraction/evaluation is complete.
+        # After that, keep compact provenance fields instead of recursive objects.
+        self._collapse_candidate_parents(candidate)
         return candidate
 
     def _log(self, algo_proto: AlgoProto, is_template: bool = False):
@@ -373,8 +484,14 @@ class OpenEvolve(IterativeSearchBase):
         tag = " (Template)" if is_template else ""
         algo_id_str = f"#{current_sample_num}{tag}"
 
-        score_val = algo_proto.score
+        score_val = algo_proto.get("evaluator_score", algo_proto.score)
         score_str = f"{score_val:10.4f}" if score_val is not None else f"{'None':>10}"
+        fitness_val = algo_proto.get("fitness_score", None)
+        fitness_str = (
+            f"{fitness_val:10.4f}"
+            if isinstance(fitness_val, (int, float))
+            else f"{'None':>10}"
+        )
 
         sample_time_val = algo_proto.get("sample_time", 0.0)
         sample_time_str = (
@@ -388,15 +505,17 @@ class OpenEvolve(IterativeSearchBase):
         logging.info(
             f"Algo {algo_id_str:<16} | "
             f"Score: {score_str} | "
+            f"Fitness: {fitness_str} | "
             f"Sample: {sample_time_str} | "
             f"{time_info}"
         )
 
         # Register to the logger no matter if it is feasible.
         if self._logger:
-            # Keep only specified metadata keys for logging
-            algo_proto.keep_metadata_keys(self._config.keep_metadata_keys)
-            log_entry = algo_proto.to_dict()
+            # Log a trimmed copy so the database entry keeps its full metadata.
+            algo_proto_for_log = copy.deepcopy(algo_proto)
+            algo_proto_for_log.keep_metadata_keys(self._config.keep_metadata_keys)
+            log_entry = algo_proto_for_log.to_dict()
             log_entry.update(
                 {
                     "sample_num": current_sample_num,
@@ -416,11 +535,17 @@ class OpenEvolve(IterativeSearchBase):
 
     @override
     def register(self, algo_proto: AlgoProto):
-        """Registers a new AlgoProto in the database and logger."""
+        """
+        Register a finished candidate and trigger island maintenance immediately.
+
+        This is where sample counting, database insertion, generation tracking,
+        migration checks, terminal logging, and logger persistence are tied
+        together.
+        """
         if not algo_proto or not algo_proto.program:
             return
 
-        island_id = algo_proto.get("island_id", -1)
+        island_id = algo_proto.get("target_island", algo_proto.get("island_id", -1))
 
         with self._lock:
             if (
@@ -431,8 +556,19 @@ class OpenEvolve(IterativeSearchBase):
 
             self._samples_count += 1
 
-            if algo_proto.score is not None:
+            if algo_proto.get("metrics") or algo_proto.score is not None:
                 self._database.register_program(algo_proto, island_id=island_id)
+                if island_id >= 0:
+                    self._database.increment_island_generation(island_id)
+                    # Check migration immediately after registration so island
+                    # state changes are applied synchronously with sample intake.
+                    if self._database.should_migrate():
+                        logging.info(
+                            "Triggering migration at sample %s from island %s registration...",
+                            self._samples_count,
+                            island_id,
+                        )
+                        self._database.migrate()
 
             # Print, save to algo using logger, save database using logger.
             self._log(algo_proto)

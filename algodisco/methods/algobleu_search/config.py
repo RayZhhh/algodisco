@@ -3,22 +3,20 @@
 
 from dataclasses import dataclass, field
 from typing import Optional, List
+from algodisco.base.search_method import SearchConfigBase
 from algodisco.methods.algobleu_search.algo_database import AlgoDatabaseConfig
 
 
 @dataclass
-class AlgoBLEUSearchConfig:
+class AlgoBLEUSearchConfig(SearchConfigBase):
     """Configuration for an AlgoBLEU Search run."""
 
     template_program: str
     task_description: str = ""
-    language: str = "python"
+    max_samples: Optional[int] = field(default=1000, kw_only=True)
     database_config: AlgoDatabaseConfig = field(default_factory=AlgoDatabaseConfig)
-    num_samplers: int = 4
-    num_evaluators: int = 4
     examples_per_prompt: int = 2
     samples_per_prompt: int = 4
-    max_samples: Optional[int] = 1000
     inter_island_selection_p: float = 0.5
     llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120

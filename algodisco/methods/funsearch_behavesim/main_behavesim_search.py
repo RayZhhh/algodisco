@@ -9,9 +9,9 @@ from pathlib import Path
 # Automatically detect the project root (4 levels up from this file).
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
-from algodisco.methods.behavesim_search.config import BehaveSimSearchConfig
-from algodisco.methods.behavesim_search.search import BehaveSimSearch
-from algodisco.methods.behavesim_search.database import AlgoDatabaseConfig
+from algodisco.methods.funsearch_behavesim.config import BehaveSimSearchConfig
+from algodisco.methods.funsearch_behavesim.search import BehaveSimSearch
+from algodisco.methods.funsearch_behavesim.database import AlgoDatabaseConfig
 
 
 def load_class(class_path=None, kwargs=None):
@@ -30,7 +30,7 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        default=str(PROJECT_ROOT / "configs" / "behavesim_search.yaml"),
+        default=str(PROJECT_ROOT / "configs" / "funsearch_behavesim.yaml"),
         help="Path to the YAML config file",
     )
     args = parser.parse_args()

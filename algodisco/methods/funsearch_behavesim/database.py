@@ -15,7 +15,7 @@ import numpy as np
 import scipy
 
 from algodisco.base.algo import AlgoProto
-from algodisco.methods.behavesim_search.similarity_calculator import BehaveSimCalculator
+from algodisco.methods.funsearch_behavesim.similarity_calculator import BehaveSimCalculator
 
 
 def _softmax(logits: np.ndarray, temperature: float) -> np.ndarray:
