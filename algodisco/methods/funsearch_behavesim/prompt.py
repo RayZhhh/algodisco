@@ -121,8 +121,14 @@ if __name__ == "__main__":
     adapter = PromptAdapter()
     algos = [
         AlgoProto(program="def choose_move(state):\n    return 0", language="python"),
-        AlgoProto(program="def choose_move(state):\n    return len(state) % 3", language="python"),
-        AlgoProto(program="def choose_move(state):\n    return sum(state) % 3", language="python"),
+        AlgoProto(
+            program="def choose_move(state):\n    return len(state) % 3",
+            language="python",
+        ),
+        AlgoProto(
+            program="def choose_move(state):\n    return sum(state) % 3",
+            language="python",
+        ),
     ]
 
     print("=== prompt ===")

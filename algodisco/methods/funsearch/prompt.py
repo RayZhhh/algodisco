@@ -115,9 +115,11 @@ class PromptAdapter:
             )
         prompt += "\n\n"
         prompt += self._render_prompt(
-            _IMPROVEMENT_REQUEST_WITH_IDEA_TEMPLATE
-            if idea_prompt
-            else _IMPROVEMENT_REQUEST_TEMPLATE,
+            (
+                _IMPROVEMENT_REQUEST_WITH_IDEA_TEMPLATE
+                if idea_prompt
+                else _IMPROVEMENT_REQUEST_TEMPLATE
+            ),
             language=language,
         )
         return prompt
@@ -136,8 +138,18 @@ if __name__ == "__main__":
     ]
 
     print("=== prompt ===")
-    print(adapter.construct_prompt(programs, "Design a stronger transformation function."))
+    print(
+        adapter.construct_prompt(programs, "Design a stronger transformation function.")
+    )
     print("\n=== prompt with idea ===")
-    print(adapter.construct_prompt(programs, "Design a stronger transformation function.", idea_prompt=True))
+    print(
+        adapter.construct_prompt(
+            programs, "Design a stronger transformation function.", idea_prompt=True
+        )
+    )
     print("\n=== extracted code ===")
-    print(adapter.extract_code("### Idea\nUse a reverse affine transform.\n\n### Code\n```python\ndef solve(n):\n    return n - 1\n```"))
+    print(
+        adapter.extract_code(
+            "### Idea\nUse a reverse affine transform.\n\n### Code\n```python\ndef solve(n):\n    return n - 1\n```"
+        )
+    )

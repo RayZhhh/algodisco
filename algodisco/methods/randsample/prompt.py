@@ -90,9 +90,11 @@ class PromptAdapter:
 
         prompt += "\n\n"
         prompt += self._render_prompt(
-            _GENERATION_REQUEST_WITH_IDEA_TEMPLATE
-            if idea_prompt
-            else _GENERATION_REQUEST_TEMPLATE,
+            (
+                _GENERATION_REQUEST_WITH_IDEA_TEMPLATE
+                if idea_prompt
+                else _GENERATION_REQUEST_TEMPLATE
+            ),
             language=language,
         )
         return prompt
@@ -110,8 +112,22 @@ if __name__ == "__main__":
     )
 
     print("=== prompt ===")
-    print(adapter.construct_prompt(template_program, "Generate a new variant of the selection heuristic."))
+    print(
+        adapter.construct_prompt(
+            template_program, "Generate a new variant of the selection heuristic."
+        )
+    )
     print("\n=== prompt with idea ===")
-    print(adapter.construct_prompt(template_program, "Generate a new variant of the selection heuristic.", idea_prompt=True))
+    print(
+        adapter.construct_prompt(
+            template_program,
+            "Generate a new variant of the selection heuristic.",
+            idea_prompt=True,
+        )
+    )
     print("\n=== extracted code ===")
-    print(adapter.extract_code("### Idea\nSwitch to taking the last available candidate.\n\n### Code\n```python\ndef solve(items):\n    return items[-1]\n```"))
+    print(
+        adapter.extract_code(
+            "### Idea\nSwitch to taking the last available candidate.\n\n### Code\n```python\ndef solve(items):\n    return items[-1]\n```"
+        )
+    )

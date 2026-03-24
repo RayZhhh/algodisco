@@ -299,9 +299,17 @@ if __name__ == "__main__":
     print("=== i1 ===")
     print(adapter.construct_prompt_i1(task_description, template_program))
     print("\n=== e1 ===")
-    print(adapter.construct_prompt_e1(task_description, [parent_a, parent_b], template_program))
+    print(
+        adapter.construct_prompt_e1(
+            task_description, [parent_a, parent_b], template_program
+        )
+    )
     print("\n=== e2 ===")
-    print(adapter.construct_prompt_e2(task_description, [parent_a, parent_b], template_program))
+    print(
+        adapter.construct_prompt_e2(
+            task_description, [parent_a, parent_b], template_program
+        )
+    )
     print("\n=== m1 ===")
     print(adapter.construct_prompt_m1(task_description, parent_a, template_program))
     print("\n=== m2 ===")
