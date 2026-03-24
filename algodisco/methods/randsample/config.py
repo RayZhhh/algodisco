@@ -12,6 +12,7 @@ class RandSampleConfig(SearchConfigBase):
 
     template_program: str
     task_description: str = ""
+    idea_prompt: bool = False
     max_samples: Optional[int] = field(default=1000, kw_only=True)
     llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120

@@ -1,9 +1,14 @@
 # Copyright (c) 2026 Rui Zhang
 # Licensed under the MIT license.
 
+import sys
 import re
+from pathlib import Path
 from textwrap import dedent
 from typing import List, Optional
+
+if __name__ == "__main__" and __package__ is None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from algodisco.base.algo import AlgoProto
 from algodisco.toolkit.program_parser.utils import extract_code_from_response
@@ -12,7 +17,7 @@ _OUTPUT_INSTRUCTIONS_TEMPLATE = dedent("""
     Return your answer in exactly the following format:
 
     ### Idea
-    <one-sentence algorithm idea>
+    <algorithm idea>
 
     ### Code
     ```{language}
@@ -44,7 +49,7 @@ _PROMPT_TEMPLATE_I1 = dedent("""
 
     Please help me design a novel {language_capitalized} algorithm.
 
-    1. First, describe your new algorithm idea and main steps in one sentence under `### Idea`.
+    1. First, describe your new algorithm idea and main steps under `### Idea`.
     2. Next, implement the following {language_capitalized} function under `### Code`:
     {template_program}
 
@@ -60,7 +65,7 @@ _PROMPT_TEMPLATE_E1 = dedent("""
 
     Please help me create a new algorithm that has a totally different form from the given ones.
 
-    1. First, describe your new algorithm idea and main steps in one sentence under `### Idea`.
+    1. First, describe your new algorithm idea and main steps under `### Idea`.
     2. Next, implement the following {language_capitalized} function under `### Code`:
     {template_program}
 
@@ -77,7 +82,7 @@ _PROMPT_TEMPLATE_E2 = dedent("""
     Please help me create a new algorithm that has a totally different form from the given ones but can be motivated from them.
 
     1. First, identify the common backbone idea in the provided algorithms internally.
-    2. Next, based on that backbone idea, describe your new algorithm idea in one sentence under `### Idea`.
+    2. Next, based on that backbone idea, describe your new algorithm idea under `### Idea`.
     3. Then, implement the following {language_capitalized} function under `### Code`:
     {template_program}
 
@@ -93,7 +98,7 @@ _PROMPT_TEMPLATE_M1 = dedent("""
 
     Please assist me in creating a new algorithm that has a different form but can be a modified version of the algorithm provided.
 
-    1. First, describe your new algorithm idea and main steps in one sentence under `### Idea`.
+    1. First, describe your new algorithm idea and main steps under `### Idea`.
     2. Next, implement the following {language_capitalized} function under `### Code`:
     {template_program}
 
@@ -109,7 +114,7 @@ _PROMPT_TEMPLATE_M2 = dedent("""
 
     Please identify the main algorithm parameters and assist me in creating a new algorithm that has a different parameter settings of the score function provided.
 
-    1. First, describe your new algorithm idea and main steps in one sentence under `### Idea`.
+    1. First, describe your new algorithm idea and main steps under `### Idea`.
     2. Next, implement the following {language_capitalized} function under `### Code`:
     {template_program}
 
@@ -259,3 +264,65 @@ class EoHPromptAdapter:
         if not code_section:
             return None
         return extract_code_from_response(code_section, language)
+
+
+if __name__ == "__main__":
+    adapter = EoHPromptAdapter()
+    task_description = "Design an algorithm to return the maximum value in a list."
+    template_program = dedent("""
+        def solve(values: list[int]) -> int:
+            pass
+        """).strip()
+
+    parent_a = AlgoProto(
+        program=dedent("""
+            def solve(values: list[int]) -> int:
+                return max(values)
+            """).strip(),
+        language="python",
+    )
+    parent_a["idea"] = "Return the largest element directly with a built-in reduction."
+
+    parent_b = AlgoProto(
+        program=dedent("""
+            def solve(values: list[int]) -> int:
+                best = values[0]
+                for value in values[1:]:
+                    if value > best:
+                        best = value
+                return best
+            """).strip(),
+        language="python",
+    )
+    parent_b["idea"] = "Scan once and keep the running maximum."
+
+    print("=== i1 ===")
+    print(adapter.construct_prompt_i1(task_description, template_program))
+    print("\n=== e1 ===")
+    print(adapter.construct_prompt_e1(task_description, [parent_a, parent_b], template_program))
+    print("\n=== e2 ===")
+    print(adapter.construct_prompt_e2(task_description, [parent_a, parent_b], template_program))
+    print("\n=== m1 ===")
+    print(adapter.construct_prompt_m1(task_description, parent_a, template_program))
+    print("\n=== m2 ===")
+    print(adapter.construct_prompt_m2(task_description, parent_b, template_program))
+
+    sample_response = dedent("""
+        ### Idea
+        Partition the input into chunks, compute chunk maxima, then combine them.
+
+        ### Code
+        ```python
+        def solve(values: list[int]) -> int:
+            chunk_size = max(1, len(values) // 4)
+            best = values[0]
+            for i in range(0, len(values), chunk_size):
+                best = max(best, max(values[i : i + chunk_size]))
+            return best
+        ```
+        """).strip()
+
+    print("\n=== extracted idea ===")
+    print(adapter.extract_idea(sample_response))
+    print("\n=== extracted code ===")
+    print(adapter.extract_code(sample_response))

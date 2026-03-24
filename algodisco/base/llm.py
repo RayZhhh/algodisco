@@ -17,7 +17,8 @@ class LanguageModel:
         *args,
         **kwargs,
     ):
-        """Send a chat completion query to the language model server.
+        """
+        Send a chat completion query to the language model server.
         Return the response content.
 
         Args:
@@ -34,7 +35,8 @@ class LanguageModel:
         timeout_seconds: Optional[float] = None,
         **kwargs,
     ) -> List[float] | List[List[float]]:
-        """Generate embeddings for the given text(s) using the model specified during initialization.
+        """
+        Generate embeddings for the given text(s) using the model specified during initialization.
 
         Args:
             text: The text or a list of texts to embed.

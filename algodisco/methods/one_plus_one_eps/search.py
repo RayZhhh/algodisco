@@ -218,7 +218,9 @@ class OnePlusOneEPS(IterativeSearchBase):
         candidate["parents"] = [best_program_copy]
 
         prompt = self._prompt_constructor.construct_prompt(
-            best_program_copy, task_description=self._config.task_description
+            best_program_copy,
+            task_description=self._config.task_description,
+            idea_prompt=self._config.idea_prompt,
         )
         candidate["prompt"] = prompt
         return candidate

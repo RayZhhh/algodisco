@@ -210,7 +210,9 @@ class RandSample(IterativeSearchBase):
         candidate["parents"] = [template_program_copy]
 
         prompt = self._prompt_constructor.construct_prompt(
-            template_program_copy, task_description=self._config.task_description
+            template_program_copy,
+            task_description=self._config.task_description,
+            idea_prompt=self._config.idea_prompt,
         )
         candidate["prompt"] = prompt
         return candidate

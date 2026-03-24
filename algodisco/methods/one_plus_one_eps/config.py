@@ -12,6 +12,7 @@ class OnePlusOneEPSConfig(SearchConfigBase):
 
     template_program: str
     task_description: str = ""
+    idea_prompt: bool = False
     max_samples: Optional[int] = field(default=1000, kw_only=True)
     samples_per_prompt: int = 4
     llm_max_tokens: Optional[int] = None

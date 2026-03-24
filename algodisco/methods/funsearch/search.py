@@ -249,7 +249,9 @@ class FunSearch(IterativeSearchBase):
         candidate["island_id"] = island_id
 
         prompt = self._prompt_constructor.construct_prompt(
-            candidate["parents"], task_description=self._config.task_description
+            candidate["parents"],
+            task_description=self._config.task_description,
+            idea_prompt=self._config.idea_prompt,
         )
         candidate["prompt"] = prompt
         return candidate

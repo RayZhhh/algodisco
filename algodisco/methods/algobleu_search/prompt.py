@@ -1,8 +1,13 @@
 # Copyright (c) 2026 Rui Zhang
 # Licensed under the MIT license.
 
+import sys
+from pathlib import Path
 from textwrap import dedent
 from typing import List, Optional
+
+if __name__ == "__main__" and __package__ is None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from algodisco.base.algo import AlgoProto
 from algodisco.toolkit.program_parser.utils import extract_code_from_response
@@ -129,19 +134,16 @@ class PromptAdapter:
 
 
 if __name__ == "__main__":
-    code1 = """
-def f1():
-    return 0
-    """
+    adapter = PromptAdapter()
+    algos = [
+        AlgoProto(program="def score(x):\n    return x + 1", language="python"),
+        AlgoProto(program="def score(x):\n    return x * 2", language="python"),
+        AlgoProto(program="def score(x):\n    return x * x", language="python"),
+    ]
 
-    code2 = """
-def f2():
-    return 1
-    """
-
-    code3 = """
-def f3():
-    return 2
-        """
-    res = PromptAdapter().construct_prompt("task description", [code1, code2, code3])
-    print(res)
+    print("=== prompt ===")
+    print(adapter.construct_prompt("Design a better scoring function.", algos))
+    print("\n=== idea summary prompt ===")
+    print(adapter.construct_idea_summary_prompt(algos[0]))
+    print("\n=== extracted code ===")
+    print(adapter.extract_code("```python\ndef score(x):\n    return x - 1\n```"))

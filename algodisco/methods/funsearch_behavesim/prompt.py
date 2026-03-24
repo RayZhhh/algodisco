@@ -1,8 +1,13 @@
 # Copyright (c) 2026 Rui Zhang
 # Licensed under the MIT license.
 
+import sys
+from pathlib import Path
 from textwrap import dedent
 from typing import List, Optional
+
+if __name__ == "__main__" and __package__ is None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from algodisco.base.algo import AlgoProto
 from algodisco.toolkit.program_parser.utils import extract_code_from_response
@@ -113,8 +118,14 @@ class PromptAdapter:
 
 
 if __name__ == "__main__":
-    code1 = AlgoProto(program="def f1():\n    return 0", language="python")
-    code2 = AlgoProto(program="def f2():\n    return 1", language="python")
-    code3 = AlgoProto(program="def f3():\n    return 2", language="python")
-    res = PromptAdapter().construct_prompt("task description", [code1, code2, code3])
-    print(res)
+    adapter = PromptAdapter()
+    algos = [
+        AlgoProto(program="def choose_move(state):\n    return 0", language="python"),
+        AlgoProto(program="def choose_move(state):\n    return len(state) % 3", language="python"),
+        AlgoProto(program="def choose_move(state):\n    return sum(state) % 3", language="python"),
+    ]
+
+    print("=== prompt ===")
+    print(adapter.construct_prompt("Design a better behavior policy.", algos))
+    print("\n=== extracted code ===")
+    print(adapter.extract_code("```python\ndef choose_move(state):\n    return 1\n```"))
