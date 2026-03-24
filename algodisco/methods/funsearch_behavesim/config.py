@@ -25,4 +25,13 @@ class BehaveSimSearchConfig(SearchConfigBase):
     recluster_threshold: int = 100
 
     # Metadata keys to keep when saving
-    keep_metadata_keys: List[str] = field(default_factory=lambda: ["sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"])
+    keep_metadata_keys: List[str] = field(
+        default_factory=lambda: [
+            "sample_time",
+            "eval_time",
+            "execution_time",
+            "error_msg",
+            "prompt",
+            "response_text",
+        ]
+    )

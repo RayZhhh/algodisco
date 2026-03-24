@@ -10,6 +10,7 @@ class EvalResult(TypedDict):
 
     Must contain at least a 'score' key. Subclasses can add more keys.
     """
+
     score: float
     execution_time: NotRequired[Optional[float]]
     error_msg: NotRequired[Optional[str]]

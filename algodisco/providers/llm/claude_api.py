@@ -39,7 +39,9 @@ class ClaudeAPI(LanguageModel):
         # If api_key is set to None, find 'ANTHROPIC_API_KEY' in environment variables
         if api_key is None:
             if "ANTHROPIC_API_KEY" not in os.environ:
-                raise RuntimeError('If "api_key" is None, ANTHROPIC_API_KEY must be set.')
+                raise RuntimeError(
+                    'If "api_key" is None, ANTHROPIC_API_KEY must be set.'
+                )
             else:
                 api_key = os.environ["ANTHROPIC_API_KEY"]
 
@@ -74,8 +76,14 @@ class ClaudeAPI(LanguageModel):
         actual_messages = []
         for msg in messages:
             # Handle potential dict or object access
-            role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
-            content = msg.get("content") if isinstance(msg, dict) else getattr(msg, "content", None)
+            role = (
+                msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
+            )
+            content = (
+                msg.get("content")
+                if isinstance(msg, dict)
+                else getattr(msg, "content", None)
+            )
 
             if role == "system":
                 if system_msg:

@@ -39,7 +39,7 @@ def safe_numeric_average(metrics: Dict[str, Any]) -> float:
 
 
 def get_fitness_score(
-        metrics: Dict[str, Any], feature_dimensions: Optional[List[str]] = None
+    metrics: Dict[str, Any], feature_dimensions: Optional[List[str]] = None
 ) -> float:
     """
     Compute the program fitness used for ranking and archive selection.
@@ -147,7 +147,11 @@ class ProgramDatabase:
             # Once the program is entering the database, collapse that linkage
             # into a few scalar metadata fields and drop the recursive objects.
             parent_lineage = program.get("parents", [])
-            parent = parent_lineage[0] if parent_lineage and isinstance(parent_lineage, list) else None
+            parent = (
+                parent_lineage[0]
+                if parent_lineage and isinstance(parent_lineage, list)
+                else None
+            )
             if parent is not None:
                 self._capture_parent_metadata(program, parent)
                 program.pop("parents", None)
@@ -211,7 +215,7 @@ class ProgramDatabase:
             return self.sample_from_island(island_id, num_inspirations)
 
     def sample_from_island(
-            self, island_id: int, num_inspirations: int
+        self, island_id: int, num_inspirations: int
     ) -> Tuple[AlgoProto, List[AlgoProto], int]:
         """
         Sample a parent and inspiration set for one target island.
@@ -235,7 +239,7 @@ class ProgramDatabase:
             return parent, inspirations, island_id
 
     def select_programs(
-            self, num_programs: int, island_id: Optional[int] = None
+        self, num_programs: int, island_id: Optional[int] = None
     ) -> Tuple[List[AlgoProto], int]:
         """
         Backward-compatible selection helper.
@@ -247,7 +251,9 @@ class ProgramDatabase:
             island_id %= len(self.islands)
 
             island_programs = [
-                self.programs[pid] for pid in self.islands[island_id] if pid in self.programs
+                self.programs[pid]
+                for pid in self.islands[island_id]
+                if pid in self.programs
             ]
             if not island_programs:
                 best = self.get_best_program()
@@ -260,7 +266,7 @@ class ProgramDatabase:
             return island_programs[: min(num_programs, len(island_programs))], island_id
 
     def get_top_programs(
-            self, num_programs: int, island_id: Optional[int] = None
+        self, num_programs: int, island_id: Optional[int] = None
     ) -> List[AlgoProto]:
         """Return the highest-fitness programs globally or within one island."""
         with self._lock:
@@ -368,7 +374,9 @@ class ProgramDatabase:
 
             migration_interval = getattr(self.config, "migration_interval", 50)
             max_generation = max(self.island_generations)
-            return (max_generation - self.last_migration_generation) >= migration_interval
+            return (
+                max_generation - self.last_migration_generation
+            ) >= migration_interval
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize the database state for logger snapshots/checkpoints."""
@@ -409,7 +417,9 @@ class ProgramDatabase:
         """
         parent_id = self._get_program_field(parent, "algo_id")
         parent_island_id = self._get_program_field(parent, "island_id")
-        parent_metrics = copy.deepcopy(self._get_program_field(parent, "metrics", {}) or {})
+        parent_metrics = copy.deepcopy(
+            self._get_program_field(parent, "metrics", {}) or {}
+        )
         parent_score = self._get_program_field(parent, "score")
         parent_evaluator_score = self._get_program_field(parent, "evaluator_score")
         parent_fitness_score = self._get_program_field(parent, "fitness_score")
@@ -431,7 +441,9 @@ class ProgramDatabase:
         """Sample one parent from an island using explore/exploit/weighted modes."""
         island_id %= len(self.islands)
         island_programs = [
-            self.programs[pid] for pid in self.islands[island_id] if pid in self.programs
+            self.programs[pid]
+            for pid in self.islands[island_id]
+            if pid in self.programs
         ]
 
         if not island_programs:
@@ -452,12 +464,15 @@ class ProgramDatabase:
             archive_in_island = [
                 self.programs[pid]
                 for pid in self.archive
-                if pid in self.programs and self.programs[pid].get("island_id") == island_id
+                if pid in self.programs
+                and self.programs[pid].get("island_id") == island_id
             ]
             if archive_in_island:
                 return random.choice(archive_in_island)
 
-            valid_archive = [self.programs[pid] for pid in self.archive if pid in self.programs]
+            valid_archive = [
+                self.programs[pid] for pid in self.archive if pid in self.programs
+            ]
             if valid_archive:
                 return random.choice(valid_archive)
 
@@ -489,7 +504,9 @@ class ProgramDatabase:
         self.register_program(best_copy, island_id=island_id)
         return best_copy
 
-    def _sample_global(self, num_inspirations: int) -> Tuple[AlgoProto, List[AlgoProto]]:
+    def _sample_global(
+        self, num_inspirations: int
+    ) -> Tuple[AlgoProto, List[AlgoProto]]:
         """Fallback sampling path used when the requested island is empty."""
         parent = self._sample_parent_global()
         parent_island = parent.get("island_id")
@@ -519,7 +536,9 @@ class ProgramDatabase:
             return random.choice(all_programs)
 
         if r < exploration_ratio + exploitation_ratio:
-            valid_archive = [self.programs[pid] for pid in self.archive if pid in self.programs]
+            valid_archive = [
+                self.programs[pid] for pid in self.archive if pid in self.programs
+            ]
             if valid_archive:
                 return random.choice(valid_archive)
 
@@ -553,7 +572,7 @@ class ProgramDatabase:
         return candidates[: min(n, len(candidates))]
 
     def _sample_inspirations(
-            self, parent: AlgoProto, island_id: int, n: int
+        self, parent: AlgoProto, island_id: int, n: int
     ) -> List[AlgoProto]:
         """
         Assemble inspiration programs for prompt construction.
@@ -569,16 +588,18 @@ class ProgramDatabase:
             return inspirations
 
         island_programs = [
-            self.programs[pid] for pid in self.islands[island_id] if pid in self.programs
+            self.programs[pid]
+            for pid in self.islands[island_id]
+            if pid in self.programs
         ]
         if not island_programs:
             return inspirations
 
         island_best_id = self.island_best_programs[island_id]
         if (
-                island_best_id is not None
-                and island_best_id in self.programs
-                and island_best_id != parent.algo_id
+            island_best_id is not None
+            and island_best_id in self.programs
+            and island_best_id != parent.algo_id
         ):
             # Always expose the island champion first when it is not the parent.
             inspirations.append(self.programs[island_best_id])
@@ -603,7 +624,9 @@ class ProgramDatabase:
                     # requiring an explicit nearest-neighbor structure.
                     max(
                         0,
-                        min(self.config.feature_bins - 1, coord + random.randint(-2, 2)),
+                        min(
+                            self.config.feature_bins - 1, coord + random.randint(-2, 2)
+                        ),
                     )
                     for coord in parent_coords
                 ]
@@ -611,10 +634,10 @@ class ProgramDatabase:
                     self._feature_coords_to_key(perturbed)
                 )
                 if (
-                        elite_id
-                        and elite_id in self.programs
-                        and elite_id != parent.algo_id
-                        and self.programs[elite_id] not in inspirations
+                    elite_id
+                    and elite_id in self.programs
+                    and elite_id != parent.algo_id
+                    and self.programs[elite_id] not in inspirations
                 ):
                     inspirations.append(self.programs[elite_id])
                 if len(inspirations) >= n:
@@ -737,8 +760,8 @@ class ProgramDatabase:
         # Diversity is approximated against a rolling reference set to avoid
         # quadratic pairwise comparisons across the whole population.
         if (
-                not self.diversity_reference_set
-                or len(self.diversity_reference_set) < self.diversity_reference_size
+            not self.diversity_reference_set
+            or len(self.diversity_reference_set) < self.diversity_reference_size
         ):
             self._update_diversity_reference_set()
 
@@ -863,7 +886,9 @@ class ProgramDatabase:
         if self._is_better(program, current_best):
             self.island_best_programs[island_id] = program.algo_id
 
-    def _enforce_population_limit(self, exclude_program_id: Optional[str] = None) -> None:
+    def _enforce_population_limit(
+        self, exclude_program_id: Optional[str] = None
+    ) -> None:
         """Prune the global population while preserving protected programs."""
         population_size = getattr(self.config, "population_size", None)
         if population_size is None or population_size <= 0:
@@ -874,7 +899,9 @@ class ProgramDatabase:
 
         # Never evict the current global best or the program that was just
         # inserted, even if population pruning happens immediately afterward.
-        protected_ids = {pid for pid in [self.best_program_id, exclude_program_id] if pid}
+        protected_ids = {
+            pid for pid in [self.best_program_id, exclude_program_id] if pid
+        }
         sorted_programs = sorted(self.programs.values(), key=self._get_score)
 
         num_to_remove = len(self.programs) - population_size
@@ -907,7 +934,9 @@ class ProgramDatabase:
             island.discard(program_id)
 
         for island_idx, island_map in enumerate(self.island_feature_maps):
-            keys_to_remove = [key for key, pid in island_map.items() if pid == program_id]
+            keys_to_remove = [
+                key for key, pid in island_map.items() if pid == program_id
+            ]
             for key in keys_to_remove:
                 del island_map[key]
 
@@ -917,7 +946,11 @@ class ProgramDatabase:
     def _cleanup_stale_island_bests(self) -> None:
         """Recompute island champions after pruning or elite replacement."""
         for island_id, best_id in enumerate(self.island_best_programs):
-            if best_id is not None and best_id in self.programs and best_id in self.islands[island_id]:
+            if (
+                best_id is not None
+                and best_id in self.programs
+                and best_id in self.islands[island_id]
+            ):
                 continue
 
             # If the cached best is gone, recompute from the surviving members

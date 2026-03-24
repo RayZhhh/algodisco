@@ -18,5 +18,12 @@ class RandSampleConfig(SearchConfigBase):
 
     # Metadata keys to keep when saving
     keep_metadata_keys: List[str] = field(
-        default_factory=lambda: ["sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
+        default_factory=lambda: [
+            "sample_time",
+            "eval_time",
+            "execution_time",
+            "error_msg",
+            "prompt",
+            "response_text",
+        ]
     )

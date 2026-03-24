@@ -107,8 +107,9 @@ class AlgoProto:
         return data
 
     def __deepcopy__(self, memo: Dict):
-        """Creates a deep copy of the object with a newly generated algo_id.
-        
+        """
+        Creates a deep copy of the object with a newly generated algo_id.
+
         This method ensures that when copy.deepcopy() is called, the original
         algo_id is not copied, triggering the constructor to generate a fresh UUID.
         """

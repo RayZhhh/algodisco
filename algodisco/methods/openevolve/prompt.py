@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from algodisco.base.algo import AlgoProto
 from algodisco.methods.openevolve.config import OpenEvolveConfig
 from algodisco.methods.openevolve.database import get_fitness_score
+from algodisco.toolkit.program_parser.utils import extract_code_from_response
 
 logger = logging.getLogger(__name__)
 
@@ -345,7 +346,9 @@ class PromptConstructor:
                 feature_parts.append(
                     f"{self.template_manager.get_fragment('top_program_metrics_prefix')} {name} ({value})"
                 )
-        return ", ".join(feature_parts) if feature_parts else "No standout feature markers"
+        return (
+            ", ".join(feature_parts) if feature_parts else "No standout feature markers"
+        )
 
     def _extract_unique_features(self, program: Any) -> str:
         # These heuristics are intentionally lightweight; they recover the
@@ -356,9 +359,9 @@ class PromptConstructor:
         if not changes:
             changes = self._get_program_value(program, "changes_summary")
         if (
-                isinstance(changes, str)
-                and self.config.include_changes_under_chars
-                and len(changes) < self.config.include_changes_under_chars
+            isinstance(changes, str)
+            and self.config.include_changes_under_chars
+            and len(changes) < self.config.include_changes_under_chars
         ):
             features.append(
                 self.template_manager.get_fragment(
@@ -392,25 +395,31 @@ class PromptConstructor:
         # Add a few style and structure hints so inspirations are not presented
         # as raw code only.
         if "class " in code_lower and "def __init__" in code_lower:
-            features.append(self.template_manager.get_fragment("inspiration_code_with_class"))
+            features.append(
+                self.template_manager.get_fragment("inspiration_code_with_class")
+            )
         if "numpy" in code_lower or "np." in code_lower:
-            features.append(self.template_manager.get_fragment("inspiration_code_with_numpy"))
+            features.append(
+                self.template_manager.get_fragment("inspiration_code_with_numpy")
+            )
         if "for " in code_lower and "while " in code_lower:
             features.append(
-                self.template_manager.get_fragment("inspiration_code_with_mixed_iteration")
+                self.template_manager.get_fragment(
+                    "inspiration_code_with_mixed_iteration"
+                )
             )
 
         line_count = len([line for line in code.splitlines() if line.strip()])
         if (
-                self.config.concise_implementation_max_lines
-                and line_count <= self.config.concise_implementation_max_lines
+            self.config.concise_implementation_max_lines
+            and line_count <= self.config.concise_implementation_max_lines
         ):
             features.append(
                 self.template_manager.get_fragment("inspiration_code_with_concise_line")
             )
         elif (
-                self.config.comprehensive_implementation_min_lines
-                and line_count >= self.config.comprehensive_implementation_min_lines
+            self.config.comprehensive_implementation_min_lines
+            and line_count >= self.config.comprehensive_implementation_min_lines
         ):
             features.append(
                 self.template_manager.get_fragment(
@@ -435,7 +444,9 @@ class PromptConstructor:
 
         # Surface execution failures directly in the prompt so the model can
         # repair them before optimizing for fitness again.
-        error_info = self._get_program_value(parent, "error_msg") or metrics.get("error")
+        error_info = self._get_program_value(parent, "error_msg") or metrics.get(
+            "error"
+        )
         if error_info:
             areas.append(
                 "The previous version encountered an error. Please review the artifacts/logs and fix the bug."
@@ -446,7 +457,9 @@ class PromptConstructor:
         if previous_metrics:
             # Compare against the stored parent metrics when available so the
             # prompt can describe the local search direction.
-            previous_fitness = get_fitness_score(previous_metrics, self.config.feature_dimensions)
+            previous_fitness = get_fitness_score(
+                previous_metrics, self.config.feature_dimensions
+            )
             if current_fitness > previous_fitness:
                 areas.append(
                     self.template_manager.get_fragment(
@@ -497,7 +510,9 @@ class PromptConstructor:
 
         return "\n".join(f"- {area}" for area in areas)
 
-    def _compute_attempt_outcome(self, metrics: Dict[str, Any], parent_metrics: Dict[str, Any]) -> str:
+    def _compute_attempt_outcome(
+        self, metrics: Dict[str, Any], parent_metrics: Dict[str, Any]
+    ) -> str:
         """Describe whether a previous attempt improved or regressed numerically."""
         if not parent_metrics:
             return self.template_manager.get_fragment("attempt_unknown_changes")
@@ -507,7 +522,9 @@ class PromptConstructor:
         for key, value in metrics.items():
             # Only compare numeric metrics that exist on both sides.
             parent_value = parent_metrics.get(key)
-            if isinstance(value, (int, float)) and isinstance(parent_value, (int, float)):
+            if isinstance(value, (int, float)) and isinstance(
+                parent_value, (int, float)
+            ):
                 improved.append(float(value) > float(parent_value))
                 regressed.append(float(value) < float(parent_value))
 
@@ -518,9 +535,9 @@ class PromptConstructor:
         return self.template_manager.get_fragment("attempt_mixed_metrics")
 
     def _format_previous_attempts(
-            self,
-            previous_programs: List[Any],
-            parent_parent_metrics: Dict[str, Any],
+        self,
+        previous_programs: List[Any],
+        parent_parent_metrics: Dict[str, Any],
     ) -> str:
         """Render a small history of recent attempts for the current prompt."""
         if not previous_programs:
@@ -538,9 +555,9 @@ class PromptConstructor:
             block = template.format(
                 attempt_number=i + 1,
                 changes=(
-                        self._get_program_value(program, "changes")
-                        or self._get_program_value(program, "changes_summary")
-                        or self.template_manager.get_fragment("attempt_unknown_changes")
+                    self._get_program_value(program, "changes")
+                    or self._get_program_value(program, "changes_summary")
+                    or self.template_manager.get_fragment("attempt_unknown_changes")
                 ),
                 performance=self._format_metrics_inline(metrics),
                 outcome=self._compute_attempt_outcome(metrics, parent_metrics),
@@ -622,10 +639,18 @@ class PromptConstructor:
     def _safe_decode_artifact(self, value: Any) -> str:
         """Decode artifact payloads into safe prompt text."""
         if isinstance(value, str):
-            return self._apply_security_filter(value) if self.config.artifact_security_filter else value
+            return (
+                self._apply_security_filter(value)
+                if self.config.artifact_security_filter
+                else value
+            )
         if isinstance(value, bytes):
             decoded = value.decode("utf-8", errors="replace")
-            return self._apply_security_filter(decoded) if self.config.artifact_security_filter else decoded
+            return (
+                self._apply_security_filter(decoded)
+                if self.config.artifact_security_filter
+                else decoded
+            )
         return str(value)
 
     def _render_artifacts(self, parent: Any) -> str:
@@ -635,7 +660,9 @@ class PromptConstructor:
 
         metrics = self._get_program_value(parent, "metrics", {}) or {}
         artifacts: Dict[str, Any] = {}
-        error_info = self._get_program_value(parent, "error_msg") or metrics.get("error")
+        error_info = self._get_program_value(parent, "error_msg") or metrics.get(
+            "error"
+        )
         if error_info:
             artifacts["error"] = error_info
         if self._get_program_value(parent, "logs"):
@@ -649,10 +676,17 @@ class PromptConstructor:
             # Keep artifacts bounded so one verbose traceback does not dominate
             # the entire prompt budget.
             if len(content) > self.config.max_artifact_bytes:
-                content = content[: self.config.max_artifact_bytes] + "\n... (truncated)"
+                content = (
+                    content[: self.config.max_artifact_bytes] + "\n... (truncated)"
+                )
             sections.append(f"### {key}\n```\n{content}\n```")
 
-        return "## " + self.template_manager.get_fragment("artifact_title") + "\n\n" + "\n\n".join(sections)
+        return (
+            "## "
+            + self.template_manager.get_fragment("artifact_title")
+            + "\n\n"
+            + "\n\n".join(sections)
+        )
 
     def summarize_changes(self, response: str) -> str:
         """Compress a diff-style model response into a short history string."""
@@ -674,8 +708,16 @@ class PromptConstructor:
         max_line_len = max(10, self.config.diff_summary_max_line_len)
 
         for search_text, replace_text in diffs[:3]:
-            search_lines = [line.strip() for line in search_text.strip().splitlines() if line.strip()]
-            replace_lines = [line.strip() for line in replace_text.strip().splitlines() if line.strip()]
+            search_lines = [
+                line.strip()
+                for line in search_text.strip().splitlines()
+                if line.strip()
+            ]
+            replace_lines = [
+                line.strip()
+                for line in replace_text.strip().splitlines()
+                if line.strip()
+            ]
             before = " ".join(search_lines[:1])[:max_line_len]
             after = " ".join(replace_lines[:1])[:max_line_len]
             if before or after:
@@ -683,14 +725,18 @@ class PromptConstructor:
             if len(summaries) >= max_lines:
                 break
 
-        return " | ".join(summaries) if summaries else self.template_manager.get_fragment("attempt_unknown_changes")
+        return (
+            " | ".join(summaries)
+            if summaries
+            else self.template_manager.get_fragment("attempt_unknown_changes")
+        )
 
     def construct_prompt(
-            self,
-            parent: AlgoProto,
-            top_programs: List[AlgoProto],
-            inspirations: List[AlgoProto],
-            previous_programs: Optional[List[AlgoProto]] = None,
+        self,
+        parent: AlgoProto,
+        top_programs: List[AlgoProto],
+        inspirations: List[AlgoProto],
+        previous_programs: Optional[List[AlgoProto]] = None,
     ) -> Dict[str, str]:
         """
         Build the full system/user prompt pair without changing the search API.
@@ -720,7 +766,9 @@ class PromptConstructor:
         top_programs_str = self._format_top_programs(top_programs, language)
         inspirations_section = self._format_inspirations_section(inspirations, language)
 
-        history_section = self.template_manager.get_template("evolution_history").format(
+        history_section = self.template_manager.get_template(
+            "evolution_history"
+        ).format(
             previous_attempts=previous_attempts_str.strip(),
             top_programs=top_programs_str.strip(),
             inspirations_section=inspirations_section.strip(),
@@ -795,8 +843,8 @@ class PromptConstructor:
                     # rewrite the wrong region when the model preserved spacing.
                     matched = False
                     for i in range(len(lines) - len(search_lines) + 1):
-                        if lines[i: i + len(search_lines)] == search_lines:
-                            lines[i: i + len(search_lines)] = replace_lines
+                        if lines[i : i + len(search_lines)] == search_lines:
+                            lines[i : i + len(search_lines)] = replace_lines
                             matched = True
                             break
 
@@ -805,19 +853,16 @@ class PromptConstructor:
                         # changes indentation or trailing whitespace in SEARCH.
                         for i in range(len(lines) - len(search_lines) + 1):
                             if [
-                                l.strip() for l in lines[i: i + len(search_lines)]
+                                l.strip() for l in lines[i : i + len(search_lines)]
                             ] == [l.strip() for l in search_lines]:
                                 # In the fallback path, trust the replacement
                                 # block as emitted by the model.
-                                lines[i: i + len(search_lines)] = replace_lines
+                                lines[i : i + len(search_lines)] = replace_lines
                                 break
                 return "\n".join(lines)
 
         # Fallback to full code block extraction (for Rewrite mode or failed Diffs)
-        match = re.search(
-            rf"```(?:{self.config.language})?\s*\n(.*?)\n```", response, re.DOTALL
-        )
-        return match.group(1).strip() if match else None
+        return extract_code_from_response(response, self.config.language)
 
 
 if __name__ == "__main__":

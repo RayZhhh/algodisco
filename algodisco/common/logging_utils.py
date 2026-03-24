@@ -40,7 +40,7 @@ def format_error_box(error_msg: str, max_width: int = 80) -> str:
     """
     # Truncate error message if too long
     if len(error_msg) > max_width - 4:
-        error_msg = error_msg[:max_width - 7] + "..."
+        error_msg = error_msg[: max_width - 7] + "..."
 
     lines = error_msg.split("\n")
     if len(lines) > 5:

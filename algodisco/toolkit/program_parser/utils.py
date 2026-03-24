@@ -1,17 +1,17 @@
-# Language keyword definitions for finding code start positions
-# Format: {language: {"import_keywords": [...], "function_keywords": [...]}}
 import re
 from typing import Optional
 
 
-def extract_code_from_response(response: str, language: str = "python"):
+def extract_code_from_response(
+    response: str, language: str = "python"
+) -> Optional[str]:
     try:
         code = extract_code_from_markdown_block(response, language)
         if code is not None:
             return code
         return extract_code_by_bottom_up(response, language)
     except Exception:
-        return ""
+        return None
 
 
 def extract_code_from_markdown_block(
@@ -24,7 +24,7 @@ def extract_code_from_markdown_block(
     return match.group(1).strip() if match else None
 
 
-def extract_code_by_bottom_up(response: str, language: str = "python") -> str:
+def extract_code_by_bottom_up(response: str, language: str = "python") -> Optional[str]:
     """
     Code extractor based on "bottom-up deletion" idea, supporting multiple programming languages.
 
@@ -33,7 +33,7 @@ def extract_code_by_bottom_up(response: str, language: str = "python") -> str:
         language: Programming language name, supports: python, javascript, java, cpp, go
 
     Returns:
-        Extracted clean code string
+        Extracted clean code string, or None if extraction fails
     """
     from algodisco.toolkit.program_parser.program_parser import has_syntax_error
 
@@ -61,7 +61,7 @@ def extract_code_by_bottom_up(response: str, language: str = "python") -> str:
             break
 
     if start_idx == -1:
-        return f"No code start found in text (supported languages: {', '.join(_LANGUAGE_KEYWORDS.keys())})."
+        return None
 
     # Take all content after the starting point
     candidate_lines = lines[start_idx:]
@@ -103,7 +103,7 @@ def extract_code_by_bottom_up(response: str, language: str = "python") -> str:
             break
 
     if not candidate_lines:
-        return f"Failed to extract valid {language} code after all truncations."
+        return None
 
     # 3. Return extracted code
     return "\n".join(candidate_lines)

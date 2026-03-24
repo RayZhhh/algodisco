@@ -62,7 +62,18 @@ if __name__ == "__main__":
         "--lang",
         type=str,
         required=True,
-        choices=["java", "javascript", "c_sharp", "php", "c", "cpp", "go", "python", "ruby", "rust"],
+        choices=[
+            "java",
+            "javascript",
+            "c_sharp",
+            "php",
+            "c",
+            "cpp",
+            "go",
+            "python",
+            "ruby",
+            "rust",
+        ],
     )
     parser.add_argument(
         "--params",

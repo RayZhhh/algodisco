@@ -294,8 +294,12 @@ class OpenEvolve(IterativeSearchBase):
                 for island_id, pending in enumerate(self._island_pending)
                 if pending < self._batch_per_island
             ]
-            candidate_islands = eligible_islands or list(range(len(self._island_pending)))
-            island_id = min(candidate_islands, key=lambda idx: (self._island_pending[idx], idx))
+            candidate_islands = eligible_islands or list(
+                range(len(self._island_pending))
+            )
+            island_id = min(
+                candidate_islands, key=lambda idx: (self._island_pending[idx], idx)
+            )
             self._island_pending[island_id] += 1
             return island_id
 
@@ -304,7 +308,10 @@ class OpenEvolve(IterativeSearchBase):
         if island_id is None or island_id < 0:
             return
         with self._lock:
-            if island_id < len(self._island_pending) and self._island_pending[island_id] > 0:
+            if (
+                island_id < len(self._island_pending)
+                and self._island_pending[island_id] > 0
+            ):
                 self._island_pending[island_id] -= 1
 
     def _collapse_candidate_parents(self, candidate: AlgoProto) -> None:
@@ -315,7 +322,9 @@ class OpenEvolve(IterativeSearchBase):
 
         parent = parents[0]
         parent_id = parent.get("algo_id") if isinstance(parent, AlgoProto) else None
-        parent_island_id = parent.get("island_id") if isinstance(parent, AlgoProto) else None
+        parent_island_id = (
+            parent.get("island_id") if isinstance(parent, AlgoProto) else None
+        )
         parent_metrics = (
             copy.deepcopy(parent.get("metrics", {}) or {})
             if isinstance(parent, AlgoProto)

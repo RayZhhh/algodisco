@@ -1,10 +1,52 @@
 # Copyright (c) 2026 Rui Zhang
 # Licensed under the MIT license.
 
-import re
-from typing import List, Optional, Tuple
+from textwrap import dedent
+from typing import List, Optional
 
 from algodisco.base.algo import AlgoProto
+from algodisco.toolkit.program_parser.utils import extract_code_from_response
+
+_TASK_DESCRIPTION_TEMPLATE = dedent("""
+    Here is the task description:
+    <task>
+    {task_description}
+    </task>
+
+    Below are some existing {language_capitalized} algorithms that attempt to solve this task.
+    They are provided for context on different approaches.
+    """).strip()
+
+_NO_TASK_DESCRIPTION_TEMPLATE = (
+    "Please help me design a novel {language_capitalized} algorithm function. "
+    "Here is an example algorithm function implementation:"
+)
+
+_VERSION_TEMPLATE = dedent("""
+    [Version {version}]
+    {code_block}
+    """).strip()
+
+_OUTPERFORMS_TEMPLATE = (
+    "We find that the below version outperforms [Version {version}]."
+)
+
+_IMPROVEMENT_REQUEST_TEMPLATE = dedent("""
+    Please generate an improved version of the algorithm.
+    Think outside the box. Do not modify the function signature (i.e., function name, args, ...)
+    Please generate your algorithm in ```{language} ...``` block.
+    Only output the code and do not give additional outputs.
+    """).strip()
+
+_IDEA_SUMMARY_TEMPLATE = dedent("""
+    Please read the following {language_capitalized} code and summarize its core idea and algorithmic approach in natural language.
+    The summary should be concise and descriptive, capturing the essence of the algorithm.
+
+    Code:
+    {code_block}
+
+    Summary:
+    """).strip()
 
 
 class PromptAdapter:
@@ -13,66 +55,77 @@ class PromptAdapter:
     def _wrap_markdown_code_block(self, code: str, language: str = "python") -> str:
         return f"```{language}\n{code.strip()}\n```"
 
+    def _render_prompt(self, template: str, **kwargs: str) -> str:
+        return template.format(**kwargs).strip()
+
     def construct_prompt(
         self, task_description: str, sorted_algos: List[AlgoProto]
     ) -> str:
         """Constructs a few-shot prompt to guide the LLM."""
+        language = sorted_algos[0].language
+        language_capitalized = language.capitalize()
+
         if task_description:
-            prompt = (
-                "Here is the task description:\n"
-                f"<task>\n{task_description}\n</task>\n\n"
-                "Below are some existing Python algorithms that attempt to solve this task. "
-                "They are provided for context on different approaches.\n\n"
+            prompt = self._render_prompt(
+                _TASK_DESCRIPTION_TEMPLATE,
+                task_description=task_description,
+                language_capitalized=language_capitalized,
             )
         else:
-            prompt = (
-                "Please help me design an novel Python algorithm function. "
-                "Here is an example algorithm function implementation: \n"
+            prompt = self._render_prompt(
+                _NO_TASK_DESCRIPTION_TEMPLATE,
+                language_capitalized=language_capitalized,
             )
         if len(sorted_algos) > 1:
-            prompt += "[Version 1]\n"
+            prompt += "\n\n"
+        else:
+            prompt += "\n"
 
-        language = sorted_algos[0].language
-        prompt += f"{self._wrap_markdown_code_block(str(sorted_algos[0].program), language)}"
+        prompt += (
+            self._render_prompt(
+                _VERSION_TEMPLATE,
+                version="1",
+                code_block=self._wrap_markdown_code_block(
+                    str(sorted_algos[0].program), language
+                ),
+            )
+            if len(sorted_algos) > 1
+            else self._wrap_markdown_code_block(str(sorted_algos[0].program), language)
+        )
 
         for i in range(1, len(sorted_algos)):
-            prompt += f"\n\nWe find that the below version outperforms [Version {i}]."
-            prompt += f"\n[Version {i + 1}]\n"
-            prompt += self._wrap_markdown_code_block(
-                str(sorted_algos[i].program), language
+            prompt += "\n\n"
+            prompt += self._render_prompt(
+                _OUTPERFORMS_TEMPLATE,
+                version=str(i),
             )
-        prompt += (
-            "\n\nPlease generate an improved version of the algorithm. "
-            "Think outside the box. Do not modify the function signature (i.e., function name, args, ...)"
-            f"Please generate your algorithm in ```{language} ...``` block. "
-            "Only output the code and do not give additional outputs. "
-            # "Your code should be concise if possible."
+            prompt += "\n"
+            prompt += self._render_prompt(
+                _VERSION_TEMPLATE,
+                version=str(i + 1),
+                code_block=self._wrap_markdown_code_block(
+                    str(sorted_algos[i].program), language
+                ),
+            )
+        prompt += "\n\n"
+        prompt += self._render_prompt(
+            _IMPROVEMENT_REQUEST_TEMPLATE,
+            language=language,
         )
         return prompt
 
     def construct_idea_summary_prompt(self, algo: AlgoProto) -> str:
         """Constructs a prompt for the LLM to summarize the core idea of the code."""
-        prompt = (
-            "Please read the following Python code and summarize its core idea and algorithmic approach in natural language."
-            "The summary should be concise and descriptive, capturing the essence of the algorithm."
-            "\n\nCode:\n"
-            f"{self._wrap_markdown_code_block(str(algo.program), algo.language)}"
-            "\n\nSummary:"
+        language = algo.language or "python"
+        return self._render_prompt(
+            _IDEA_SUMMARY_TEMPLATE,
+            language_capitalized=language.capitalize(),
+            code_block=self._wrap_markdown_code_block(str(algo.program), language),
         )
-        return prompt
 
     def extract_code(self, response: str, language="python") -> Optional[str]:
         """Extracts the Python code block from the LLM's response."""
-        if not response:
-            return None
-        # Extract code
-        code_match = re.search(
-            rf"```(?:{language})?\s*\n(.*?)\n```",
-            response,
-            re.DOTALL,
-        )
-        code = code_match.group(1).strip() if code_match else None
-        return code
+        return extract_code_from_response(response, language)
 
 
 if __name__ == "__main__":
@@ -90,7 +143,5 @@ def f2():
 def f3():
     return 2
         """
-    res = PromptAdapter().construct_prompt(
-        "task description", [code1, code2, code3]
-    )
+    res = PromptAdapter().construct_prompt("task description", [code1, code2, code3])
     print(res)

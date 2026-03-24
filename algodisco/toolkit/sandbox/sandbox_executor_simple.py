@@ -15,9 +15,9 @@ from algodisco.toolkit.sandbox.utils import _redirect_to_devnull
 __all__ = ["ExecutionResults", "SandboxExecutorSimple"]
 
 # Set multiprocessing start method to 'fork' on macOS/Linux for better compatibility.
-if sys.platform.startswith('darwin') or sys.platform.startswith('linux'):
+if sys.platform.startswith("darwin") or sys.platform.startswith("linux"):
     try:
-        multiprocessing.set_start_method('fork', force=True)
+        multiprocessing.set_start_method("fork", force=True)
     except RuntimeError:
         pass  # Already set
 
@@ -76,7 +76,9 @@ class SandboxExecutorSimple:
         for child in children_processes:
             try:
                 if self.debug_mode:
-                    print(f"Killing process {process.pid}'s children process {child.pid}")
+                    print(
+                        f"Killing process {process.pid}'s children process {child.pid}"
+                    )
                 if child.is_running():
                     child.terminate()
             except Exception:

@@ -65,7 +65,9 @@ def main():
         method_config_data["task_description"] = ""
 
     # Handle database_config - convert dict to AlgoDatabaseConfig object
-    if "database_config" in method_config_data and isinstance(method_config_data["database_config"], dict):
+    if "database_config" in method_config_data and isinstance(
+        method_config_data["database_config"], dict
+    ):
         db_config_dict = method_config_data.pop("database_config")
         method_config_data["database_config"] = AlgoDatabaseConfig(**db_config_dict)
 

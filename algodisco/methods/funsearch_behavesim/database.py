@@ -15,7 +15,9 @@ import numpy as np
 import scipy
 
 from algodisco.base.algo import AlgoProto
-from algodisco.methods.funsearch_behavesim.similarity_calculator import BehaveSimCalculator
+from algodisco.methods.funsearch_behavesim.similarity_calculator import (
+    BehaveSimCalculator,
+)
 
 
 def _softmax(logits: np.ndarray, temperature: float) -> np.ndarray:
@@ -29,7 +31,7 @@ def _softmax(logits: np.ndarray, temperature: float) -> np.ndarray:
     result = scipy.special.softmax(logits / temperature, axis=-1)
     # Ensure that probabilities sum to 1 to prevent error in `np.random.choice`.
     index = np.argmax(result)
-    result[index] = 1 - np.sum(result[0:index]) - np.sum(result[index + 1:])
+    result[index] = 1 - np.sum(result[0:index]) - np.sum(result[index + 1 :])
     return result
 
 
@@ -284,7 +286,9 @@ class AlgoDatabase:
 
         # Save similarity results in the "sim_cache"
         sim_cache_all_island = [res[1] for res in island_results]
-        sim_caches_all_island = functools.reduce(dict.__or__, sim_cache_all_island, {})  # noqa
+        sim_caches_all_island = functools.reduce(
+            dict.__or__, sim_cache_all_island, {}
+        )  # noqa
         algo["sim_cache"] = sim_caches_all_island
 
         # Aggregate timings across all islands
@@ -584,9 +588,13 @@ class AlgoIsland:
                     selected_algos.append(candidate_algos[0])
                 else:
                     # Higher probability for shorter programs
-                    lengths = np.array([len(str(algo.program)) for algo in candidate_algos])
-                    normalized_lengths = (lengths - min(lengths)) / (max(lengths) + 1e-6)
-                    
+                    lengths = np.array(
+                        [len(str(algo.program)) for algo in candidate_algos]
+                    )
+                    normalized_lengths = (lengths - min(lengths)) / (
+                        max(lengths) + 1e-6
+                    )
+
                     # _softmax with negative normalized lengths to favor shorter programs
                     probs = _softmax(-normalized_lengths, temperature=1.0)
                     picked_algo = np.random.choice(candidate_algos, p=probs)
