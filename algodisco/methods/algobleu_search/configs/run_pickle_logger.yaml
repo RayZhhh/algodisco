@@ -2,8 +2,8 @@ method:
   template_program_path: "path/to/template.py"
   task_description_path: "path/to/task_description.txt"
   language: "python"
-  num_samplers: 4
-  num_evaluators: 4
+  num_samplers: auto
+  num_evaluators: auto
   examples_per_prompt: 2
   samples_per_prompt: 4
   max_samples: 1000
@@ -13,11 +13,22 @@ method:
   db_save_frequency: 100
   # Database configuration (nested under database_config)
   database_config:
+    algo_sim_calculator:
+      class_path: "algodisco.methods.algobleu_search.similarity_calculator.AlgoSimCalculator"
+      kwargs: {}
     # Island specifications
     n_islands: 10
     island_capacity: 100
     # Selection parameters
     selection_exploitation_intensity: 1.0
+    # Registration acceleration parameters
+    num_sim_caculator_workers: 1
+    async_register: true
+    # Multi-objective selection and survival
+    island_selection_mechanism: "single_obj"
+    island_survival_mechanism: "single_obj"
+    multi_obj_survival_topk: 1
+    multi_obj_score_rank_weight: 0.5
     # Similarity calculation weights
     ast_dfg_weight: 1.0
     embedding_weight: 1.0
@@ -41,7 +52,7 @@ emb_llm:
     base_url: "https://api.openai.com/v1"
 
 evaluator:
-  class_path: "your_evaluator_module.YourEvaluator"
+  class_path: "path/to/evaluator.py:YourEvaluator"
   kwargs: {}
 
 logger:

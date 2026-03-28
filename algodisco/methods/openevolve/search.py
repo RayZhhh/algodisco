@@ -98,7 +98,7 @@ class OpenEvolve(IterativeSearchBase):
         # island state can be reconstructed after the run.
         database_dict = self._database.to_dict()
         database_dict["sample_num"] = sample_num
-        self._logger.log_dict_sync(database_dict, "database")
+        self._logger.log_dict(database_dict, "database")
         logging.info(f"Saved database snapshot for sample #{sample_num} to logger.")
 
     @override
@@ -191,7 +191,7 @@ class OpenEvolve(IterativeSearchBase):
                 self._save_database(self._samples_count)
             if self._logger:
                 logging.info("Finalizing logger...")
-                self._logger.finish_sync()
+                self._logger.finish()
             logging.info("Search finished.")
 
     @override
@@ -346,6 +346,14 @@ class OpenEvolve(IterativeSearchBase):
 
         The returned AlgoProto acts as a 'candidate' container for the entire lifecycle.
         It starts with 'parents', 'island_id', and 'prompt' populated in its attributes.
+
+        AlgoProto keys set:
+            - parents: list of selected parent AlgoProto objects
+            - island_id: int, the target island for this candidate
+            - target_island: int, the island reserved for sampling
+            - context_island: int, the island used for prompt context
+            - parent_metrics: dict, metrics from the parent program
+            - prompt: str, the constructed prompt for generation
         """
         target_island = self._reserve_sampling_island()
         parent, inspirations, target_island = self._database.sample_from_island(
@@ -396,6 +404,10 @@ class OpenEvolve(IterativeSearchBase):
         """Parses 'response_text' and updates 'candidate.program' in-place.
 
         Uses the parent in 'candidate.parents' as the baseline code for diff application.
+
+        AlgoProto keys set:
+            - program: str, the extracted algorithm code
+            - changes_summary: str, summary of changes made (if available)
         """
         response_text = candidate.get("response_text", "")
         parents = candidate.get("parents")
@@ -418,6 +430,10 @@ class OpenEvolve(IterativeSearchBase):
         """Calls the LLM using candidate['prompt'] and stores 'response_text' in the candidate.
 
         Also records 'sample_time' into the candidate's attributes via the Timer.
+
+        AlgoProto keys set:
+            - response_text: str, the raw LLM response
+            - sample_time: float, time taken for LLM call (via Timer)
         """
         assert (
             self._llm is not None
@@ -436,6 +452,16 @@ class OpenEvolve(IterativeSearchBase):
         """Evaluates 'candidate.program' and updates 'candidate.score' in-place.
 
         Also records 'eval_time' and 'metrics' in the candidate's attributes.
+
+        AlgoProto keys set:
+            - execution_time: float, time taken to execute the program
+            - error_msg: str, error message if evaluation failed
+            - metrics: dict, full evaluation results
+            - evaluator_score: float, raw score from evaluator
+            - fitness_score: float, computed fitness based on feature dimensions
+            - score: float, the evaluated score
+            - eval_time: float, total evaluation time (via Timer)
+            - parent_metrics: dict, metrics from the parent (reassigned after collapse)
         """
         if not candidate or not candidate.program:
             return candidate
@@ -540,7 +566,7 @@ class OpenEvolve(IterativeSearchBase):
                     for i_id, size in island_stats.items():
                         log_entry[f"island_size_{i_id}"] = size
 
-            self._logger.log_dict_sync(log_entry, "algo")
+            self._logger.log_dict(log_entry, "algo")
 
     @override
     def register(self, algo_proto: AlgoProto):

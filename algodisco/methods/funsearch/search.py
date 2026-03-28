@@ -85,7 +85,7 @@ class FunSearch(IterativeSearchBase):
 
         database_dict = self._database.to_dict()
         database_dict["sample_num"] = sample_num
-        self._logger.log_dict_sync(database_dict, "database")
+        self._logger.log_dict(database_dict, "database")
         logging.info(f"Saved database snapshot for sample #{sample_num} to logger.")
 
     @override
@@ -164,7 +164,7 @@ class FunSearch(IterativeSearchBase):
 
             if self._logger:
                 logging.info("Finalizing logger...")
-                self._logger.finish_sync()
+                self._logger.finish()
             logging.info("Search finished.")
 
     @override
@@ -236,6 +236,11 @@ class FunSearch(IterativeSearchBase):
 
         The returned AlgoProto acts as a 'candidate' container for the entire lifecycle.
         It starts with 'parents', 'island_id', and 'prompt' populated in its attributes.
+
+        AlgoProto keys set:
+            - parents: list of selected parent AlgoProto objects
+            - island_id: int, the island from which parents were selected
+            - prompt: str, the constructed prompt for generation
         """
         sorted_programs, island_id = self._database.select_programs(
             self._config.examples_per_prompt
@@ -275,6 +280,10 @@ class FunSearch(IterativeSearchBase):
         """Calls the LLM using candidate['prompt'] and stores 'response_text' in the candidate.
 
         Also records 'sample_time' into the candidate's attributes via the Timer.
+
+        AlgoProto keys set:
+            - response_text: str, the raw LLM response
+            - sample_time: float, time taken for LLM call (via Timer)
         """
         assert (
             self._llm is not None
@@ -293,6 +302,12 @@ class FunSearch(IterativeSearchBase):
         """Evaluates 'candidate.program' and updates 'candidate.score' in-place.
 
         Also records 'eval_time' in the candidate's attributes.
+
+        AlgoProto keys set:
+            - execution_time: float, time taken to execute the program
+            - error_msg: str, error message if evaluation failed
+            - score: float, the evaluated score
+            - eval_time: float, total evaluation time (via Timer)
         """
         if not candidate or not candidate.program:
             return candidate
@@ -367,7 +382,7 @@ class FunSearch(IterativeSearchBase):
                 for i_id, size in island_stats.items():
                     log_entry[f"island_size_{i_id}"] = size
 
-            self._logger.log_dict_sync(log_entry, "algo")
+            self._logger.log_dict(log_entry, "algo")
 
     @override
     def register(self, algo_proto: AlgoProto):

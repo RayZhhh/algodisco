@@ -2,27 +2,18 @@
 # Licensed under the MIT license.
 
 import argparse
-import importlib
-import yaml
 from pathlib import Path
 
 # Automatically detect the project root (4 levels up from this file).
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
+from algodisco.common.config_loading import (
+    build_component,
+    build_method_config,
+    load_yaml_config,
+)
 from algodisco.methods.funsearch_behavesim.config import BehaveSimSearchConfig
 from algodisco.methods.funsearch_behavesim.search import BehaveSimSearch
-from algodisco.methods.funsearch_behavesim.database import AlgoDatabaseConfig
-
-
-def load_class(class_path=None, kwargs=None):
-    if not class_path:
-        return None
-    if kwargs is None:
-        kwargs = {}
-    module_path, class_name = class_path.rsplit(".", 1)
-    module = importlib.import_module(module_path)
-    cls = getattr(module, class_name)
-    return cls(**kwargs)
 
 
 def main():
@@ -30,78 +21,50 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        default=str(PROJECT_ROOT / "configs" / "funsearch_behavesim.yaml"),
+        default=str(PROJECT_ROOT / "configs" / "behavesim_search.yaml"),
         help="Path to the YAML config file",
     )
     args = parser.parse_args()
 
-    with open(args.config, "r") as f:
-        config_data = yaml.safe_load(f)
-
-    # Load configurations
-    method_config_data = config_data.get("method", {})
-
-    # Extract debug mode settings before creating config
-    debug_mode = method_config_data.pop("debug_mode", False)
-    debug_mode_crash = method_config_data.pop("debug_mode_crash", False)
-
-    # Resolve relative paths against the project root
-    if "template_program_path" in method_config_data:
-        template_path = PROJECT_ROOT / method_config_data.pop("template_program_path")
-        with open(template_path, "r") as f:
-            method_config_data["template_program"] = f.read()
-
-    # Handle task_description_path - only read if it's not null/empty
-    task_desc_path = method_config_data.get("task_description_path")
-    if task_desc_path:
-        task_desc_path = PROJECT_ROOT / method_config_data.pop("task_description_path")
-        with open(task_desc_path, "r") as f:
-            method_config_data["task_description"] = f.read()
-    elif "task_description_path" in method_config_data:
-        method_config_data.pop("task_description_path")
-
-    # Ensure task_description is not None
-    if method_config_data.get("task_description") is None:
-        method_config_data["task_description"] = ""
-
-    # Handle database_config - convert dict to AlgoDatabaseConfig object
-    if "database_config" in method_config_data and isinstance(
-        method_config_data["database_config"], dict
-    ):
-        db_config_dict = method_config_data.pop("database_config")
-        method_config_data["database_config"] = AlgoDatabaseConfig(**db_config_dict)
-
-    method_config = BehaveSimSearchConfig(**method_config_data)
+    config_data = load_yaml_config(args.config)
+    method_config, debug_mode, debug_mode_crash = build_method_config(
+        config_data=config_data,
+        project_root=PROJECT_ROOT,
+        config_cls=BehaveSimSearchConfig,
+    )
 
     # Dynamically instantiate components
-    llm = load_class(
-        class_path=config_data.get("llm", {}).get("class_path"),
-        kwargs=config_data.get("llm", {}).get("kwargs", {}),
+    llm = build_component(
+        section_config=config_data.get("llm", {}),
+        project_root=PROJECT_ROOT,
     )
-    evaluator = load_class(
-        class_path=config_data.get("evaluator", {}).get("class_path"),
-        kwargs=config_data.get("evaluator", {}).get("kwargs", {}),
+    emb_llm = build_component(
+        section_config=config_data.get("emb_llm", {}),
+        project_root=PROJECT_ROOT,
     )
-
-    # Resolve logger path if it exists
-    logger_config = config_data.get("logger", {})
-    if "kwargs" in logger_config and "logdir" in logger_config["kwargs"]:
-        logger_config["kwargs"]["logdir"] = str(
-            PROJECT_ROOT / logger_config["kwargs"]["logdir"]
-        )
-
-    logger = load_class(
-        class_path=logger_config.get("class_path"),
-        kwargs=logger_config.get("kwargs", {}),
+    evaluator = build_component(
+        section_config=config_data.get("evaluator", {}),
+        project_root=PROJECT_ROOT,
+    )
+    logger = build_component(
+        section_config=config_data.get("logger", {}),
+        project_root=PROJECT_ROOT,
+        path_kwargs=("logdir", "swanlab_logdir"),
     )
 
     if not llm:
         raise ValueError("An LLM must be provided in the configuration.")
+    if not emb_llm:
+        raise ValueError("An emb_llm must be provided in the configuration.")
     if not evaluator:
         raise ValueError("An Evaluator must be provided in the configuration.")
 
     search = BehaveSimSearch(
-        config=method_config, llm=llm, evaluator=evaluator, logger=logger
+        config=method_config,
+        llm=llm,
+        emb_llm=emb_llm,
+        evaluator=evaluator,
+        logger=logger,
     )
 
     # Set debug mode from config

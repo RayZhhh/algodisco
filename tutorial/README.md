@@ -111,5 +111,5 @@ Each notebook contains detailed code examples showing:
 ## Additional Resources
 
 - [CLAUDE.md](../CLAUDE.md) - Project overview
-- [configs/](../configs/) - Example configurations
+- [configs/](../_ignore/configs/) - Example configurations
 - [algodisco/methods/](../algodisco/methods/) - Search method implementations

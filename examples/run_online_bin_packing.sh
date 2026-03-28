@@ -28,22 +28,22 @@ CONFIG_FILE="examples/online_bin_packing/configs/${METHOD}.yaml"
 # Map method names to their module paths
 case "$METHOD" in
     funsearch|funsearch_swanlab)
-        MODULE="adlab.methods.funsearch.main_funsearch"
+        MODULE="algodisco.methods.funsearch.main_funsearch"
         ;;
     openevolve)
-        MODULE="adlab.methods.openevolve.main_openevolve"
+        MODULE="algodisco.methods.openevolve.main_openevolve"
         ;;
     eoh)
-        MODULE="adlab.methods.eoh.main_eoh"
+        MODULE="algodisco.methods.eoh.main_eoh"
         ;;
     one_plus_one_eps)
-        MODULE="adlab.methods.one_plus_one_eps.main_one_plus_one_eps"
+        MODULE="algodisco.methods.one_plus_one_eps.main_one_plus_one_eps"
         ;;
     randsample)
-        MODULE="adlab.methods.randsample.main_randsample"
+        MODULE="algodisco.methods.randsample.main_randsample"
         ;;
     behavesim)
-        MODULE="adlab.methods.behavesim_search.main_behavesim_search"
+        MODULE="algodisco.methods.funsearch_behavesim.main_behavesim_search"
         ;;
     *)
         echo "Unknown method: $METHOD"

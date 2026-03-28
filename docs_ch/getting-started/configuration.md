@@ -1,123 +1,149 @@
-# Configuration Guide
+# 配置指南
 
-This guide explains all configuration options available in AlgoDisco YAML configuration files.
+AlgoDisco 通过 YAML 文件描述一次完整实验。一个配置文件会同时定义搜索方法、LLM 后端、评测器和日志器。
 
-## Configuration Structure
+## 配置结构
 
-The configuration file consists of four main sections:
+一个典型配置文件包含以下顶层字段：
 
 ```yaml
 method:
-  # Search method configuration
+  ...
 llm:
-  # LLM provider configuration
+  ...
 evaluator:
-  # Evaluator configuration
+  ...
 logger:
-  # Logger configuration
+  ...
 ```
 
-## Method Configuration
+各部分职责如下：
 
-### Common Parameters
+- `method`：搜索策略、模板输入、采样预算等方法级配置
+- `llm`：候选程序生成所使用的模型后端
+- `evaluator`：负责执行程序并计算分数的组件
+- `logger`：负责保存实验结果、日志和中间产物的组件
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `template_program_path` | `str` | Required | Path to the template program file |
-| `task_description_path` | `str` | Required | Path to the task description file |
-| `language` | `str` | `"python"` | Programming language of the programs |
-| `num_samplers` | `int` | `4` | Number of parallel sampler threads |
-| `num_evaluators` | `int` | `4` | Number of parallel evaluator threads |
-| `examples_per_prompt` | `int` | `2` | Number of examples to include in prompts |
-| `samples_per_prompt` | `int` | `4` | Number of samples to generate per prompt |
-| `max_samples` | `int` | `1000` | Maximum number of samples to generate |
-| `llm_max_tokens` | `int` | `1024` | Maximum tokens for LLM response |
-| `llm_timeout_seconds` | `int` | `120` | Timeout for LLM calls |
+## 组件是如何加载的
 
-### Database Parameters (FunSearch, OpenEvolve)
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `db_num_islands` | `int` | `10` | Number of islands in the population |
-| `db_max_island_capacity` | `int` | `null` | Maximum programs per island |
-| `db_reset_period` | `int` | `14400` | Island reset period in seconds |
-| `db_cluster_sampling_temperature_init` | `float` | `0.1` | Initial sampling temperature |
-| `db_cluster_sampling_temperature_period` | `int` | `30000` | Temperature adjustment period |
-| `db_save_frequency` | `int` | `100` | Database save frequency |
-
-### Debug Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `debug_mode` | `bool` | `false` | Enable debug mode with verbose logging |
-| `debug_mode_crash` | `bool` | `false` | Exit immediately on error in debug mode |
-
-### Metadata Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `keep_metadata_keys` | `List[str]` | `["sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]` | Metadata keys to preserve in logs |
-
-## LLM Provider Configuration
-
-### Using OpenAI
+`llm`、`evaluator` 和 `logger` 三个部分遵循相同结构：
 
 ```yaml
 llm:
   class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
   kwargs:
-    model: "gpt-4"
-    api_key: "your-api-key"
+    model: "gpt-4o-mini"
+```
+
+`class_path` 支持两种写法：
+
+- Python 导入路径，例如 `algodisco.providers.llm.openai_api.OpenAIAPI`
+- 文件路径加类名，例如 `examples/online_bin_packing/evaluator.py:OnlineBinPackingEvaluator`
+
+`kwargs` 会原样传给构造函数。
+
+## 路径解析规则
+
+当前实现中，配置里的相对路径是相对于仓库根目录解析的，而不是相对于 YAML 文件所在目录。
+
+这条规则尤其影响以下字段：
+
+- `method.template_program_path`
+- `method.task_description_path`
+- `method.template_dir`
+- `logger.kwargs.logdir`
+
+如果你调整了配置文件位置，这一点必须注意。
+
+## 常用的 Method 字段
+
+大多数搜索方法都共享一组基础字段：
+
+| 字段 | 类型 | 作用 |
+| --- | --- | --- |
+| `template_program_path` | `str` | 初始模板程序路径 |
+| `task_description_path` | `str` | 任务描述文件路径 |
+| `language` | `str` | 生成程序所使用的语言 |
+| `num_samplers` | `int` 或 `"auto"` | 并发采样线程数 |
+| `num_evaluators` | `int` 或 `"auto"` | 并发评测线程数 |
+| `max_samples` | `int` | 最多生成多少个候选 |
+| `llm_max_tokens` | `int \| null` | 单次模型响应的 token 上限 |
+| `llm_timeout_seconds` | `int` | 单次模型调用超时 |
+| `debug_mode` | `bool` | 是否开启更详细的调试行为 |
+| `debug_mode_crash` | `bool` | 出错时是否立刻中断而不是继续运行 |
+
+不同方法还会附加自己的专属字段。例如：
+
+- FunSearch 会使用 `db_num_islands` 等归档与岛模型参数。
+- OpenEvolve 会增加 `diff_based_evolution`、`feature_dimensions`、`archive_size` 等演化与归档相关配置。
+- BehaveSim 会额外引入 `emb_llm` 配置块，用于相似度相关能力。
+
+## 一个最小可用示例
+
+下面是一个足够实用的起步配置：
+
+```yaml
+method:
+  template_program_path: "examples/online_bin_packing/template_algo.txt"
+  task_description_path: "examples/online_bin_packing/task_description.txt"
+  language: "python"
+  num_samplers: auto
+  num_evaluators: auto
+  max_samples: 100
+  llm_max_tokens: 1024
+  llm_timeout_seconds: 120
+
+llm:
+  class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+  kwargs:
+    model: "gpt-4o-mini"
+    api_key: null
     base_url: "https://api.openai.com/v1"
-```
 
-### Using Claude
+evaluator:
+  class_path: "examples/online_bin_packing/evaluator.py:OnlineBinPackingEvaluator"
+  kwargs: {}
 
-```yaml
-llm:
-  class_path: "algodisco.providers.llm.claude_api.ClaudeAPI"
+logger:
+  class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
   kwargs:
-    model: "claude-3-opus-20240229"
-    api_key: "your-api-key"
+    logdir: "logs/my_first_run"
 ```
 
-### Using vLLM
+## LLM 配置块
 
-```yaml
-llm:
-  class_path: "algodisco.providers.llm.vllm_server.VLLMServer"
-  kwargs:
-    model: "meta-llama/Llama-2-70b-hf"
-    api_url: "http://localhost:8000/v1"
-```
+`llm` 用来指定模型后端以及对应构造参数。
 
-### Using SGLang
+仓库中已经包含以下后端实现：
 
-```yaml
-llm:
-  class_path: "algodisco.providers.llm.sglang_server.SGLangServer"
-  kwargs:
-    model: "meta-llama/Llama-2-70b-hf"
-    api_url: "http://localhost:30000/v1"
-```
+- `algodisco.providers.llm.openai_api.OpenAIAPI`
+- `algodisco.providers.llm.claude_api.ClaudeAPI`
+- `algodisco.providers.llm.vllm_server.VLLMServer`
+- `algodisco.providers.llm.sglang_server.SGLangServer`
 
-## Evaluator Configuration
+API Key 一类敏感信息建议通过环境变量提供，不要直接写进可提交的配置文件。
 
-### Built-in Evaluators
+## Evaluator 配置块
+
+评测器的职责是把“生成出来的程序”转换成“可以比较的数值分数”。
+
+它必须满足：
+
+- 继承 `algodisco.base.evaluator.Evaluator`
+- 实现 `evaluate_program(self, program_str: str)`
+- 返回至少包含 `score` 字段的字典
+
+示例：
 
 ```yaml
 evaluator:
-  class_path: "your_module.YourEvaluator"
-  kwargs:
-    param1: "value1"
-    param2: "value2"
+  class_path: "path/to/evaluator.py:YourEvaluator"
+  kwargs: {}
 ```
 
-The evaluator class must inherit from `algodisco.base.evaluator.Evaluator` and implement the `evaluate_program` method.
+## Logger 配置块
 
-## Logger Configuration
-
-### Pickle Logger (Default)
+默认日志器会把实验产物保存在本地：
 
 ```yaml
 logger:
@@ -126,88 +152,20 @@ logger:
     logdir: "logs/my_experiment"
 ```
 
-### Weights & Biases
+仓库里还提供了可选日志器：
 
-```yaml
-logger:
-  class_path: "algodisco.providers.logger.wandb_logger.WandbLogger"
-  kwargs:
-    project: "my-project"
-    entity: "my-team"
-```
+- `algodisco.providers.logger.wandb_logger.BaseWandbLogger`
+- `algodisco.providers.logger.swanlab_logger.BaseSwanLabLogger`
 
-### SwanLab
+## 推荐实践
 
-```yaml
-logger:
-  class_path: "algodisco.providers.logger.swanlab_logger.SwanLabLogger"
-  kwargs:
-    project: "my-project"
-    workspace: "my-workspace"
-```
+- 不要从零手写配置，优先复制仓库里的示例配置再修改。
+- 在当前实现下，尽量统一使用“相对于仓库根目录”的路径写法。
+- API Key 放环境变量，不要提交到版本库。
+- 每次实验使用独立的 `logdir`，避免结果互相覆盖。
 
-## Environment Variables
+## 下一步
 
-You can also use environment variables for sensitive configuration:
-
-```bash
-export OPENAI_API_KEY="your-key"
-export ANTHROPIC_API_KEY="your-key"
-```
-
-Then in your config:
-
-```yaml
-llm:
-  class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
-  kwargs:
-    model: "gpt-4"
-    api_key: null  # Will use environment variable
-```
-
-## Complete Example
-
-```yaml
-method:
-  template_program_path: "templates/max_value.py"
-  task_description_path: "tasks/max_value.txt"
-  language: "python"
-  num_samplers: 8
-  num_evaluators: 8
-  examples_per_prompt: 3
-  samples_per_prompt: 5
-  max_samples: 500
-  llm_max_tokens: 2048
-  llm_timeout_seconds: 180
-  db_num_islands: 20
-  db_max_island_capacity: 50
-  db_reset_period: 7200
-  db_save_frequency: 50
-  keep_metadata_keys:
-    - "sample_time"
-    - "eval_time"
-    - "execution_time"
-    - "error_msg"
-  debug_mode: false
-
-llm:
-  class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
-  kwargs:
-    model: "gpt-4-turbo-preview"
-
-evaluator:
-  class_path: "evaluators.max_value_evaluator.MaxValueEvaluator"
-  kwargs:
-    test_size: 100
-
-logger:
-  class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
-  kwargs:
-    logdir: "logs/max_value_search"
-```
-
-## Next Steps
-
-- [Search Methods](../user-guide/search-methods/index.md) - Learn about different search algorithms
-- [LLM Providers](../user-guide/llm-providers/index.md) - Configure LLM backends
-- [Developer Guide](../developer-guide/custom-evaluator.md) - Create custom evaluators
+- 如果你想先跑一个可用实验，继续看 [快速开始](quickstart.md)。
+- 如果你需要调优策略参数，请阅读 [搜索方法](../user-guide/search-methods/index.md) 下的具体页面。
+- 如果你准备扩展框架，请继续阅读开发者文档。

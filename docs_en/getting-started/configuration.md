@@ -1,123 +1,124 @@
 # Configuration Guide
 
-This guide explains all configuration options available in AlgoDisco YAML configuration files.
+This guide explains the YAML structure used by AlgoDisco and shows the most common configuration patterns.
 
 ## Configuration Structure
 
-The configuration file consists of four main sections:
+Most runnable configs have four top-level sections:
 
 ```yaml
 method:
-  # Search method configuration
+  # Search method settings
 llm:
-  # LLM provider configuration
+  # LLM provider instance
 evaluator:
-  # Evaluator configuration
+  # Evaluator instance
 logger:
-  # Logger configuration
+  # Logger instance
 ```
 
-## Method Configuration
+## Method Section
 
-### Common Parameters
+The `method` section configures the search algorithm itself.
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `template_program_path` | `str` | Required | Path to the template program file |
-| `task_description_path` | `str` | Required | Path to the task description file |
-| `language` | `str` | `"python"` | Programming language of the programs |
-| `num_samplers` | `int` | `4` | Number of parallel sampler threads |
-| `num_evaluators` | `int` | `4` | Number of parallel evaluator threads |
-| `examples_per_prompt` | `int` | `2` | Number of examples to include in prompts |
-| `samples_per_prompt` | `int` | `4` | Number of samples to generate per prompt |
-| `max_samples` | `int` | `1000` | Maximum number of samples to generate |
-| `llm_max_tokens` | `int` | `1024` | Maximum tokens for LLM response |
-| `llm_timeout_seconds` | `int` | `120` | Timeout for LLM calls |
+Common keys:
 
-### Database Parameters (FunSearch, OpenEvolve)
+| Key | Description |
+|-----|-------------|
+| `template_program_path` | Path to the template program file |
+| `task_description_path` | Path to the task description file |
+| `language` | Programming language of the generated programs |
+| `num_samplers` | Number of sampling workers |
+| `num_evaluators` | Number of evaluation workers |
+| `examples_per_prompt` | Number of previous examples included in prompts |
+| `samples_per_prompt` | Number of candidates generated per prompt |
+| `max_samples` | Total number of candidates to generate |
+| `llm_max_tokens` | Maximum output tokens per LLM call |
+| `llm_timeout_seconds` | Timeout for each LLM call |
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `db_num_islands` | `int` | `10` | Number of islands in the population |
-| `db_max_island_capacity` | `int` | `null` | Maximum programs per island |
-| `db_reset_period` | `int` | `14400` | Island reset period in seconds |
-| `db_cluster_sampling_temperature_init` | `float` | `0.1` | Initial sampling temperature |
-| `db_cluster_sampling_temperature_period` | `int` | `30000` | Temperature adjustment period |
-| `db_save_frequency` | `int` | `100` | Database save frequency |
+Additional keys such as `db_num_islands`, `db_reset_period`, and `keep_metadata_keys` are method-specific or logging-related.
 
-### Debug Parameters
+## Path Resolution
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `debug_mode` | `bool` | `false` | Enable debug mode with verbose logging |
-| `debug_mode_crash` | `bool` | `false` | Exit immediately on error in debug mode |
+Relative paths are resolved from the project root when AlgoDisco loads the config. For example:
 
-### Metadata Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `keep_metadata_keys` | `List[str]` | `["sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]` | Metadata keys to preserve in logs |
+```yaml
+method:
+  template_program_path: "examples/online_bin_packing/template_algo.txt"
+  task_description_path: "examples/online_bin_packing/task_description.txt"
+```
 
 ## LLM Provider Configuration
 
-### Using OpenAI
+### OpenAI
 
 ```yaml
 llm:
   class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
   kwargs:
-    model: "gpt-4"
-    api_key: "your-api-key"
+    model: "gpt-4o-mini"
+    api_key: null
     base_url: "https://api.openai.com/v1"
 ```
 
-### Using Claude
+### Claude
 
 ```yaml
 llm:
   class_path: "algodisco.providers.llm.claude_api.ClaudeAPI"
   kwargs:
-    model: "claude-3-opus-20240229"
-    api_key: "your-api-key"
+    model: "claude-3-5-sonnet-20241022"
+    api_key: null
 ```
 
-### Using vLLM
+### vLLM Server Launcher
 
 ```yaml
 llm:
   class_path: "algodisco.providers.llm.vllm_server.VLLMServer"
   kwargs:
-    model: "meta-llama/Llama-2-70b-hf"
-    api_url: "http://localhost:8000/v1"
+    model_path: "meta-llama/Meta-Llama-3-8B-Instruct"
+    port: 8000
+    gpus: 0
+    launch_vllm_in_init: true
 ```
 
-### Using SGLang
+### SGLang Server Launcher
 
 ```yaml
 llm:
   class_path: "algodisco.providers.llm.sglang_server.SGLangServer"
   kwargs:
-    model: "meta-llama/Llama-2-70b-hf"
-    api_url: "http://localhost:30000/v1"
+    model_path: "meta-llama/Meta-Llama-3-8B-Instruct"
+    port: 30000
+    gpus: 0
+    launch_sglang_in_init: true
 ```
 
 ## Evaluator Configuration
 
-### Built-in Evaluators
+You can reference an evaluator either by Python import path or by `path/to/file.py:ClassName`.
 
 ```yaml
 evaluator:
-  class_path: "your_module.YourEvaluator"
+  class_path: "examples/online_bin_packing/evaluator.py:OnlineBinPackingEvaluator"
   kwargs:
-    param1: "value1"
-    param2: "value2"
+    capacity: 100
 ```
 
-The evaluator class must inherit from `algodisco.base.evaluator.Evaluator` and implement the `evaluate_program` method.
+For your own project code:
+
+```yaml
+evaluator:
+  class_path: "my_package.my_evaluator.MyEvaluator"
+  kwargs: {}
+```
+
+The evaluator class must inherit from `algodisco.base.evaluator.Evaluator` and implement `evaluate_program`.
 
 ## Logger Configuration
 
-### Pickle Logger (Default)
+### Pickle Logger
 
 ```yaml
 logger:
@@ -130,25 +131,26 @@ logger:
 
 ```yaml
 logger:
-  class_path: "algodisco.providers.logger.wandb_logger.WandbLogger"
+  class_path: "algodisco.providers.logger.wandb_logger.BaseWandbLogger"
   kwargs:
     project: "my-project"
-    entity: "my-team"
+    logdir: "logs/my_wandb_run"
 ```
 
 ### SwanLab
 
 ```yaml
 logger:
-  class_path: "algodisco.providers.logger.swanlab_logger.SwanLabLogger"
+  class_path: "algodisco.providers.logger.swanlab_logger.BaseSwanLabLogger"
   kwargs:
     project: "my-project"
-    workspace: "my-workspace"
+    logdir: "logs/my_swanlab_run"
+    swanlab_logdir: "logs/my_swanlab_meta"
 ```
 
 ## Environment Variables
 
-You can also use environment variables for sensitive configuration:
+Use environment variables for secrets whenever possible:
 
 ```bash
 export OPENAI_API_KEY="your-key"
@@ -161,27 +163,27 @@ Then in your config:
 llm:
   class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
   kwargs:
-    model: "gpt-4"
-    api_key: null  # Will use environment variable
+    model: "gpt-4o-mini"
+    api_key: null
+    base_url: "https://api.openai.com/v1"
 ```
 
 ## Complete Example
 
 ```yaml
 method:
-  template_program_path: "templates/max_value.py"
-  task_description_path: "tasks/max_value.txt"
+  template_program_path: "examples/online_bin_packing/template_algo.txt"
+  task_description_path: "examples/online_bin_packing/task_description.txt"
   language: "python"
-  num_samplers: 8
-  num_evaluators: 8
-  examples_per_prompt: 3
-  samples_per_prompt: 5
-  max_samples: 500
-  llm_max_tokens: 2048
-  llm_timeout_seconds: 180
-  db_num_islands: 20
-  db_max_island_capacity: 50
-  db_reset_period: 7200
+  num_samplers: 2
+  num_evaluators: 2
+  examples_per_prompt: 2
+  samples_per_prompt: 2
+  max_samples: 100
+  llm_max_tokens: 1024
+  llm_timeout_seconds: 120
+  db_num_islands: 5
+  db_reset_period: 14400
   db_save_frequency: 50
   keep_metadata_keys:
     - "sample_time"
@@ -193,17 +195,18 @@ method:
 llm:
   class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
   kwargs:
-    model: "gpt-4-turbo-preview"
+    model: "gpt-4o-mini"
+    api_key: null
+    base_url: "https://api.openai.com/v1"
 
 evaluator:
-  class_path: "evaluators.max_value_evaluator.MaxValueEvaluator"
-  kwargs:
-    test_size: 100
+  class_path: "examples/online_bin_packing/evaluator.py:OnlineBinPackingEvaluator"
+  kwargs: {}
 
 logger:
   class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
   kwargs:
-    logdir: "logs/max_value_search"
+    logdir: "logs/online_bin_packing_funsearch"
 ```
 
 ## Next Steps

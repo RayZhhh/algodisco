@@ -89,13 +89,13 @@ class BasePickleLogger(AlgoSearchLoggerBase):
 
     async def log_dict(self, log_item: Dict, item_name: str):
         """Logs a dictionary to the cache and flushes based on frequency."""
-        self.log_dict_sync(log_item, item_name)
+        self.log_dict(log_item, item_name)
 
     async def finish(self):
         """Flush all remaining items in the caches."""
-        self.finish_sync()
+        self.finish()
 
-    def log_dict_sync(self, log_item: Dict, item_name: str):
+    def log_dict(self, log_item: Dict, item_name: str):
         """Synchronous version of log_dict."""
         with self._lock:
             self._pre_log_hook(log_item, item_name)
@@ -119,7 +119,7 @@ class BasePickleLogger(AlgoSearchLoggerBase):
             if self._flush_counts[item_name] >= frequency:
                 self._flush(item_name)
 
-    def finish_sync(self):
+    def finish(self):
         """Synchronous version of finish."""
         with self._lock:
             for item_name in list(self._caches.keys()):

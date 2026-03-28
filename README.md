@@ -35,18 +35,24 @@ AlgoDisco: Method Implementations and Tools for<br/>LLM-driven Automated Algorit
 ## 🚀 Quick start
 
 ```bash
-# Install
-pip install -r requirements.txt
+# Install the package in editable mode
+pip install -e .
 ```
 
-We provide two types of examples:
+If you want to use the default OpenAI path, export your API key first:
 
-1. **Code-style** (simple, for quick testing):
+```bash
+export OPENAI_API_KEY="your-api-key"
+```
+
+We provide two practical starting points:
+
+1. **Python API example**:
    ```bash
-   python examples/run_max_value.py
+   python examples/online_bin_packing/run_funsearch.py
    ```
 
-2. **YAML-style** (recommended, for production):
+2. **YAML example** (recommended for learning the config system):
    ```bash
    bash examples/run_online_bin_packing.sh funsearch
    ```
@@ -137,19 +143,20 @@ For SwanLab integration, use `funsearch_swanlab`:
 
 ### Option 2: Create your own experiment
 
-1. Choose a method (e.g., FunSearch) and copy its config:
+1. Choose a method (e.g., FunSearch) and copy one of the example configs:
    ```bash
-   cp configs/funsearch.yaml configs/my_experiment.yaml
+   cp examples/online_bin_packing/configs/funsearch.yaml my_experiment.yaml
    ```
 
 2. Edit `my_experiment.yaml` to set your:
    - `template_program_path`: Your algorithm template
    - `task_description_path`: Problem description
+   - `evaluator.class_path`: Your evaluator class
    - LLM provider settings (API key, model, etc.)
 
 3. Run:
    ```bash
-   python -m algodisco.methods.funsearch.main_funsearch --config configs/my_experiment.yaml
+   python -m algodisco.methods.funsearch.main_funsearch --config my_experiment.yaml
    ```
 
 ## 📝 Citation

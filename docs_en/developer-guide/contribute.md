@@ -1,73 +1,83 @@
-# 贡献指南
+# Contributing
 
-欢迎为 AlgoDisco 项目贡献代码！
+Contributions are welcome. This guide describes the minimum setup and the expected contribution workflow for AlgoDisco.
 
-## 开发环境设置
+## Development Setup
 
 ```bash
-# 克隆仓库
-git clone https://github.com/your-org/algodisco.git
-cd `algodisco`
+git clone https://github.com/RayZhhh/algodisco.git
+cd algodisco
 
-# 创建虚拟环境
-python -m venv venv
-source venv/bin/activate
-
-# 安装依赖
-pip install -r requirements.txt
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -e ".[dev]"
 ```
 
-## 项目结构
+Install additional extras only if your change needs them, for example:
 
+```bash
+pip install -e ".[claude]"
+pip install -e ".[wandb]"
+pip install -e ".[ray]"
 ```
+
+## Repository Layout
+
+```text
 algodisco/
-├── base/              # 核心抽象类
-│   ├── algo.py        # AlgoProto
-│   ├── evaluator.py   # Evaluator
-│   ├── llm.py         # LanguageModel
-│   ├── logger.py      # Logger
-│   └── search_method.py
-├── methods/           # 搜索方法实现
-│   ├── funsearch/
-│   ├── openevolve/
-│   └── ...
-├── providers/         # LLM 和日志提供商
-│   ├── llm/
-│   └── logger/
-└── toolkit/           # 工具类
-├── configs/               # 配置文件
-└── docs/                  # 文档
+├── algodisco/               # Core package
+│   ├── base/                # Base abstractions
+│   ├── common/              # Shared config and utility code
+│   ├── methods/             # Search method implementations
+│   ├── providers/           # LLM and logger providers
+│   └── toolkit/             # Sandboxing and parsing utilities
+├── docs_en/                 # English documentation
+├── docs_ch/                 # Chinese documentation
+├── examples/                # Runnable example tasks and configs
+└── tutorial/                # Notebook-based tutorials
 ```
 
-## 添加新搜索方法
+## Common Contribution Types
 
-1. 在 `algodisco/methods/` 下创建新目录
-2. 实现搜索类（继承 `IterativeSearchBase`）
-3. 创建配置类（使用 dataclass）
-4. 添加入口点脚本
-5. 添加配置文件模板
+### Add a Search Method
 
-## 添加新 LLM 提供商
+Typical work includes:
 
-1. 在 `algodisco/providers/llm/` 下创建新文件
-2. 继承 `LanguageModel` 基类
-3. 实现 `chat_completion` 和 `embedding` 方法
+1. Add a new module under `algodisco/methods/`.
+2. Define a config dataclass for the method.
+3. Implement the search loop and registration logic.
+4. Add an executable entry module.
+5. Provide an example config and documentation.
 
-## 代码规范
+### Add an LLM Provider
 
-- 使用类型提示
-- 遵循 PEP 8
-- 添加 docstring
-- 写单元测试
+Typical work includes:
 
-## 提交 PR
+1. Add a provider under `algodisco/providers/llm/`.
+2. Implement the required `LanguageModel` interface.
+3. Document constructor arguments and environment requirements.
 
-1. Fork 仓库
-2. 创建功能分支
-3. 编写代码和测试
-4. 更新文档
-5. 提交 Pull Request
+### Add or Extend an Evaluator
 
-## 问题反馈
+Evaluators must inherit from `algodisco.base.evaluator.Evaluator` and return a result containing at least `score`.
 
-请通过 GitHub Issues 报告 bug 和功能请求。
+## Quality Expectations
+
+Before opening a pull request:
+
+- keep the change focused and scoped
+- add or update tests when behavior changes
+- update the relevant documentation
+- avoid introducing placeholder paths, fake repository names, or unverified commands
+
+## Pull Request Checklist
+
+1. Fork the repository and create a feature branch.
+2. Implement the change and verify it locally.
+3. Update docs, configs, or examples if the user-facing workflow changed.
+4. Submit a pull request with a concise description of the problem and the fix.
+
+## Reporting Issues
+
+Use GitHub Issues for bug reports, regressions, and feature requests.

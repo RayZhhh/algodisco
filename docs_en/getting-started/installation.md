@@ -1,75 +1,82 @@
 # Installation
 
-This guide covers the installation requirements and setup for AlgoDisco.
+This guide covers the minimum setup needed to run AlgoDisco examples.
 
 ## Requirements
 
-- Python 3.10+
-- OpenAI API key (or other LLM provider)
-- Git (for cloning the repository)
+- Python 3.11+
+- Git
+- An API key for the LLM provider you plan to use
 
 ## Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/adlab.git
-cd `algodisco`
+git clone https://github.com/RayZhhh/algodisco.git
+cd algodisco
 ```
 
-## Install Dependencies
+## Install the Package
 
-The project requires several dependencies. You can install them using pip:
+Install AlgoDisco in editable mode:
 
 ```bash
-# Core dependencies
-pip install openai anthropic
-
-# Optional: For vLLM backend
-pip install vllm
-
-# Optional: For SGLang backend
-pip install sglang
-
-# Optional: For logging integrations
-pip install wandb swanlab
-
-# Optional: For Ray-based sandbox execution
-pip install ray
+pip install -e .
 ```
 
-## Environment Variables
+Install optional extras only when you need them:
 
-Set up your API keys as environment variables:
+```bash
+# Claude support
+pip install -e ".[claude]"
+
+# vLLM support
+pip install -e ".[vllm]"
+
+# SGLang support
+pip install -e ".[sglang]"
+
+# Logging integrations
+pip install -e ".[wandb,swanlab]"
+
+# Ray-based sandbox executor
+pip install -e ".[ray]"
+```
+
+## Set Environment Variables
+
+Set the API key for the provider you want to use:
 
 ```bash
 # OpenAI
 export OPENAI_API_KEY="your-api-key"
 
-# Anthropic (Claude)
+# Anthropic
 export ANTHROPIC_API_KEY="your-api-key"
-
-# Or set custom base URLs for proxy usage
-export OPENAI_BASE_URL="https://api.openai.com/v1"
-export ANTHROPIC_BASE_URL="https://api.anthropic.com"
 ```
 
-## External Dependencies
-
-Some search methods may require external dependencies located in the `temp/` directory:
+If you use the Python API directly and do not pass `base_url` in code, also set:
 
 ```bash
-# Initialize git submodules if present
+export OPENAI_BASE_URL="https://api.openai.com/v1"
+```
+
+## Optional External Setup
+
+Some advanced workflows may rely on extra assets or submodules:
+
+```bash
 git submodule update --init --recursive
 ```
 
 ## Verify Installation
 
-You can verify the installation by running a simple test:
+Run a simple import check:
 
 ```bash
-python -c "from algodisco.base import AlgoProto, IterativeSearchBase; print('Installation successful!')"
+python -c "from algodisco.methods.funsearch.config import FunSearchConfig; from algodisco.base.algo import AlgoProto; print('Installation successful!')"
 ```
 
 ## Next Steps
 
 - [Quick Start](quickstart.md) - Run your first algorithm search
-- [Configuration Guide](configuration.md) - Understand configuration options
+- [Configuration Guide](configuration.md) - Understand config structure

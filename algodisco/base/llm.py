@@ -1,9 +1,15 @@
 # Copyright (c) 2026 Rui Zhang
 # Licensed under the MIT license.
 
-from typing import List, Optional
+from typing import List, Optional, TypedDict, Sequence
 
-import openai.types.chat
+
+class ChatMessage(TypedDict, total=False):
+    role: str
+    content: str
+
+
+ChatPrompt = Sequence[ChatMessage]
 
 
 class LanguageModel:
@@ -11,7 +17,7 @@ class LanguageModel:
 
     def chat_completion(
         self,
-        message: str | List[openai.types.chat.ChatCompletionMessageParam],
+        message: str | ChatPrompt,
         max_tokens: int,
         timeout_seconds: float,
         *args,

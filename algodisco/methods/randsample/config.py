@@ -8,7 +8,17 @@ from algodisco.base.search_method import SearchConfigBase
 
 @dataclass
 class RandSampleConfig(SearchConfigBase):
-    """Configuration for a RandSample run."""
+    """Configuration for a RandSample run.
+
+    Attributes:
+        template_program: Template program source code used to initialize search.
+        task_description: Natural-language task description injected into prompts.
+        idea_prompt: Whether to use idea-oriented prompting variants.
+        max_samples: Maximum number of candidates to sample before stopping.
+        llm_max_tokens: Optional max token limit for each LLM response.
+        llm_timeout_seconds: Timeout in seconds for each LLM request.
+        keep_metadata_keys: Candidate metadata keys preserved when saving results.
+    """
 
     template_program: str
     task_description: str = ""

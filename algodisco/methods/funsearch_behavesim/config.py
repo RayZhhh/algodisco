@@ -9,7 +9,23 @@ from algodisco.methods.funsearch_behavesim.database import AlgoDatabaseConfig
 
 @dataclass
 class BehaveSimSearchConfig(SearchConfigBase):
-    """Configuration for an BehaveSim Search run."""
+    """Configuration for a BehaveSim Search run.
+
+    Attributes:
+        template_program: Template program source code used to seed the search.
+        task_description: Natural-language task description injected into prompts.
+        max_samples: Maximum number of candidates to sample before stopping.
+        database_config: Island database and similarity configuration.
+        examples_per_prompt: Number of archived examples included in each prompt.
+        samples_per_prompt: Number of candidates requested from the LLM per prompt.
+        inter_island_selection_p: Probability of selecting parents across islands.
+        llm_max_tokens: Optional max token limit for each LLM response.
+        llm_timeout_seconds: Timeout in seconds for each LLM request.
+        db_save_frequency: Frequency for persisting database snapshots to the logger.
+        enable_database_reclustering: Whether to periodically rebuild behavior clusters.
+        recluster_threshold: Number of inserts between reclustering passes.
+        keep_metadata_keys: Candidate metadata keys preserved when saving results.
+    """
 
     template_program: str
     task_description: str = ""

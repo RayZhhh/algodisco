@@ -133,10 +133,3 @@ class AlgoProto:
             keys = [keys]
         keys_to_keep = set(keys)
         self.metadata = {k: v for k, v in self.metadata.items() if k in keys_to_keep}
-
-
-if __name__ == "__main__":
-    code = "print('hello')"
-    algo = AlgoProto.from_dict({"program": code})
-    print(algo.algo_id)
-    print(algo.get_markdown_code_block())

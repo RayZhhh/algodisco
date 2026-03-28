@@ -6,8 +6,21 @@ method:
   num_top_programs: 1
   num_diverse_programs: 1
   include_artifacts: false
-  num_samplers: 4
-  num_evaluators: 4
+  template_dir: null
+  system_message: "system_message"
+  evaluator_system_message: "evaluator_system_message"
+  use_template_stochasticity: true
+  template_variations: {}
+  max_artifact_bytes: 20480
+  artifact_security_filter: true
+  suggest_simplification_after_chars: 500
+  include_changes_under_chars: 100
+  concise_implementation_max_lines: 10
+  comprehensive_implementation_min_lines: 50
+  diff_summary_max_line_len: 100
+  diff_summary_max_lines: 30
+  num_samplers: auto
+  num_evaluators: auto
   exploration_ratio: 0.2
   exploitation_ratio: 0.7
   elite_selection_ratio: 0.1
@@ -22,8 +35,10 @@ method:
     - "complexity"
     - "diversity"
   feature_bins: 10
+  complexity_mode: "code_length"
   diversity_reference_size: 20
   archive_size: 100
+  population_size: null
   migration_interval: 50
   migration_rate: 0.1
   keep_metadata_keys: ["sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
@@ -38,10 +53,15 @@ llm:
     base_url: "https://api.openai.com/v1"
 
 evaluator:
-  class_path: "your_evaluator_module.YourEvaluator"
+  class_path: "path/to/evaluator.py:YourEvaluator"
   kwargs: {}
 
 logger:
-  class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
+  class_path: "algodisco.providers.logger.swanlab_logger.BaseSwanLabLogger"
   kwargs:
     logdir: "logs/openevolve_log"
+    project: "your-swanlab-project"
+    experiment_name: "openevolve-run"
+    group: "openevolve"
+    swanlab_logdir: "logs/openevolve_log/swanlab"
+    api_key: null

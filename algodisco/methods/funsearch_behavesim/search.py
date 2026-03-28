@@ -91,7 +91,7 @@ class BehaveSimSearch(IterativeSearchBase):
 
         database_dict = self._database.to_dict()
         database_dict["sample_num"] = sample_num
-        self._logger.log_dict_sync(database_dict, "database")
+        self._logger.log_dict(database_dict, "database")
         logging.info(f"Saved database snapshot for sample #{sample_num} to logger.")
 
     @override
@@ -179,7 +179,7 @@ class BehaveSimSearch(IterativeSearchBase):
                 self._save_database(self._samples_count)
             if self._logger:
                 logging.info("Finalizing logger...")
-                self._logger.finish_sync()
+                self._logger.finish()
             logging.info("Search finished.")
 
     @override
@@ -242,7 +242,13 @@ class BehaveSimSearch(IterativeSearchBase):
 
     @override
     def select_and_create_prompt(self) -> Optional[AlgoProto]:
-        """Selects parents and creates a prompt container."""
+        """Selects parents and creates a prompt container.
+
+        AlgoProto keys set:
+            - parents: list of selected parent AlgoProto objects
+            - island_id: int, the island from which parents were selected
+            - prompt: str, the constructed prompt for generation
+        """
         if random.random() < self._config.inter_island_selection_p:
             # Inter-island selection: k islands, 1 sample from each.
             parent_selection = self._database.select_algos(
@@ -274,7 +280,12 @@ class BehaveSimSearch(IterativeSearchBase):
 
     @override
     def generate(self, candidate: AlgoProto) -> AlgoProto:
-        """Generates raw response from LLM."""
+        """Generates raw response from LLM.
+
+        AlgoProto keys set:
+            - response_text: str, the raw LLM response
+            - sample_time: float, time taken for LLM call (via Timer)
+        """
         assert (
             self._llm is not None
         ), "LLM is required for generate(). Use tool_mode=False or provide an LLM."
@@ -300,7 +311,15 @@ class BehaveSimSearch(IterativeSearchBase):
 
     @override
     def evaluate(self, candidate: AlgoProto) -> AlgoProto:
-        """Evaluates candidate program."""
+        """Evaluates candidate program.
+
+        AlgoProto keys set:
+            - execution_time: float, time taken to execute the program
+            - error_msg: str, error message if evaluation failed
+            - behavior: object, behavior extracted from evaluation
+            - score: float, the evaluated score
+            - eval_time: float, total evaluation time (via Timer)
+        """
         if not candidate or not candidate.program:
             return candidate
 
@@ -404,4 +423,4 @@ class BehaveSimSearch(IterativeSearchBase):
                     for i_id, size in island_stats.items():
                         log_entry[f"island_size_{i_id}"] = size
 
-            self._logger.log_dict_sync(log_entry, "algo")
+            self._logger.log_dict(log_entry, "algo")

@@ -3,6 +3,7 @@
 
 import abc
 import dataclasses
+import os
 from typing import Union, List, Optional, Literal
 from algodisco.base.algo import AlgoProto
 
@@ -19,15 +20,15 @@ class SearchConfigBase:
     )
 
     def __post_init__(self):
-        import os
-
         # Update num_samplers
         if self.num_samplers == "auto":
-            self.num_samplers = os.cpu_count() // 2
+            cpu_count = os.cpu_count() or 1
+            self.num_samplers = max(1, cpu_count // 2)
 
         # Update num_evaluators
         if self.num_evaluators == "auto":
-            self.num_evaluators = os.cpu_count() // 4
+            cpu_count = os.cpu_count() or 1
+            self.num_evaluators = max(1, cpu_count // 4)
 
 
 class IterativeSearchBase(abc.ABC):
@@ -82,3 +83,8 @@ class IterativeSearchBase(abc.ABC):
     def get_config(self) -> SearchConfigBase:
         """Returns the current search configuration."""
         pass
+
+    def finish(self):
+        """Terminate resources after searching."""
+        if hasattr(self, "_logger"):
+            self._logger.finish()

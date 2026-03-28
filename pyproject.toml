@@ -28,9 +28,9 @@ classifiers = [
 dependencies = [
     "numpy",
     "scipy",
-    "openai",
     "pyyaml",
     "psutil",
+    "openai",
     "tree_sitter",
     "tree_sitter_python",
     "requests",

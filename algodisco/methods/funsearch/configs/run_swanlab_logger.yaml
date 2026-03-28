@@ -2,8 +2,9 @@ method:
   template_program_path: "path/to/template.py"
   task_description_path: "path/to/task_description.txt"
   language: "python"
-  num_samplers: 4
-  num_evaluators: 4
+  num_samplers: auto
+  num_evaluators: auto
+  idea_prompt: false
   examples_per_prompt: 2
   samples_per_prompt: 4
   max_samples: 1000
@@ -27,10 +28,15 @@ llm:
     base_url: "https://api.openai.com/v1"
 
 evaluator:
-  class_path: "your_evaluator_module.YourEvaluator"
+  class_path: "path/to/evaluator.py:YourEvaluator"
   kwargs: {}
 
 logger:
-  class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
+  class_path: "algodisco.providers.logger.swanlab_logger.BaseSwanLabLogger"
   kwargs:
     logdir: "logs/funsearch_log"
+    project: "your-swanlab-project"
+    experiment_name: "funsearch-run"
+    group: "funsearch"
+    swanlab_logdir: "logs/funsearch_log/swanlab"
+    api_key: null

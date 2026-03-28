@@ -2,8 +2,9 @@ method:
   template_program_path: "examples/online_bin_packing/template_algo.txt"
   task_description_path: "examples/online_bin_packing/task_description.txt"
   language: "python"
-  num_samplers: 2
-  num_evaluators: 2
+  num_samplers: auto
+  num_evaluators: auto
+  idea_prompt: false
   examples_per_prompt: 2
   samples_per_prompt: 2
   max_samples: 100
@@ -28,15 +29,15 @@ llm:
     base_url: "https://api.openai.com/v1"
 
 evaluator:
-  class_path: "examples.online_bin_packing.evaluator.OnlineBinPackingEvaluator"
+  class_path: "examples/online_bin_packing/evaluator.py:OnlineBinPackingEvaluator"
   kwargs: {}
 
 logger:
-  class_path: "algodisco.providers.logger.swanlab_logger.SwanLabLogger"
+  class_path: "algodisco.providers.logger.swanlab_logger.BaseSwanLabLogger"
   kwargs:
-    # TODO: Replace with your project name
+    logdir: "logs/online_bin_packing"
     project: "algodisco-online-bin-packing"
-    # TODO: Replace with your workspace (optional)
-    workspace: null
-    # TODO: Replace with your API key, or set SWANLAB_API_KEY environment variable
+    experiment_name: "funsearch"
+    group: "online-bin-packing"
+    swanlab_logdir: "logs/online_bin_packing/swanlab"
     api_key: null

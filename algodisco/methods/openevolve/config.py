@@ -8,7 +8,48 @@ from algodisco.base.search_method import SearchConfigBase
 
 @dataclass
 class OpenEvolveConfig(SearchConfigBase):
-    """Configuration for an OpenEvolve run."""
+    """Configuration for an OpenEvolve run.
+
+    Attributes:
+        template_program: Template program source code used to seed the search.
+        task_description: Natural-language task description injected into prompts.
+        max_samples: Maximum number of candidates to sample before stopping.
+        diff_based_evolution: Whether to evolve with SEARCH/REPLACE diffs instead of full rewrites.
+        num_top_programs: Number of top-performing programs included in prompt context.
+        num_diverse_programs: Number of diverse cross-island programs included in prompt context.
+        include_artifacts: Whether execution logs and errors are included in prompts.
+        template_dir: Optional directory containing prompt template files.
+        system_message: Template key or identifier for the main sampler system prompt.
+        evaluator_system_message: Template key or identifier for the evaluator prompt.
+        use_template_stochasticity: Whether to randomize among configured template variations.
+        template_variations: Mapping of template slots to alternative prompt strings.
+        max_artifact_bytes: Maximum artifact payload size included in prompts.
+        artifact_security_filter: Whether to sanitize artifacts before injecting them into prompts.
+        suggest_simplification_after_chars: Character threshold for asking the model to simplify outputs.
+        include_changes_under_chars: Character threshold for including explicit change summaries.
+        concise_implementation_max_lines: Line threshold used to classify concise implementations.
+        comprehensive_implementation_min_lines: Line threshold used to classify comprehensive implementations.
+        diff_summary_max_line_len: Maximum line length used when summarizing diffs.
+        diff_summary_max_lines: Maximum number of lines included in diff summaries.
+        exploration_ratio: Fraction of sampling budget allocated to exploration.
+        exploitation_ratio: Fraction of sampling budget allocated to exploitation.
+        elite_selection_ratio: Fraction of selections reserved for elite programs.
+        samples_per_prompt: Number of candidates requested from the LLM per prompt.
+        llm_max_tokens: Optional max token limit for each LLM response.
+        llm_timeout_seconds: Timeout in seconds for each LLM request.
+        db_num_islands: Number of islands maintained in the MAP-Elites archive.
+        db_reset_period: Period in seconds for island reset/rebalancing.
+        db_save_frequency: Frequency for persisting database snapshots to the logger.
+        feature_dimensions: Feature dimensions used to index the MAP-Elites archive.
+        feature_bins: Number of bins per feature dimension.
+        complexity_mode: Complexity metric implementation, such as code length or AST-based.
+        diversity_reference_size: Reference set size used for diversity calculation.
+        archive_size: Maximum number of elites retained in the archive.
+        population_size: Optional cap on the live population size.
+        migration_interval: Number of samples between migration events.
+        migration_rate: Fraction of population migrated during a migration event.
+        keep_metadata_keys: Candidate metadata keys preserved when saving results.
+    """
 
     # fmt:off
     template_program: str

@@ -1,0 +1,34 @@
+method:
+  template_program_path: "admissible_set/template_algo.txt"
+  task_description_path: "admissible_set/task_description.txt"
+  language: "python"
+  num_samplers: auto
+  num_evaluators: auto
+  idea_prompt: false
+  max_samples: 1000
+  llm_max_tokens: 1024
+  llm_timeout_seconds: 120
+  keep_metadata_keys: ["sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
+  debug_mode: false
+  debug_mode_crash: false
+
+llm:
+  class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+  kwargs:
+    model: "qwen/qwen3-coder-30b"
+    api_key: ""
+    base_url: "http://192.168.31.85:1234/v1/"
+
+evaluator:
+  class_path: "admissible_set/evaluator.py:AdmissibleSetEvaluator"
+  kwargs: {}
+
+logger:
+  class_path: "algodisco.providers.logger.swanlab_logger.BaseSwanLabLogger"
+  kwargs:
+    logdir: "logs/randsample_log"
+    project: "your-swanlab-project"
+    experiment_name: "randsample-run"
+    group: "randsample"
+    swanlab_logdir: "logs/randsample_log/swanlab"
+    api_key: null

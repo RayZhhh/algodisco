@@ -80,7 +80,7 @@ class EoHSearch(IterativeSearchBase):
 
         database_dict = self._database.to_dict()
         database_dict["sample_num"] = sample_num
-        self._logger.log_dict_sync(database_dict, "database")
+        self._logger.log_dict(database_dict, "database")
         logging.info(f"Saved database snapshot for sample #{sample_num} to logger.")
 
     @override
@@ -160,7 +160,7 @@ class EoHSearch(IterativeSearchBase):
                 self._save_database(self._samples_count)
             if self._logger:
                 logging.info("Finalizing logger...")
-                self._logger.finish_sync()
+                self._logger.finish()
             logging.info("Search finished.")
 
     @override
@@ -219,7 +219,13 @@ class EoHSearch(IterativeSearchBase):
 
     @override
     def select_and_create_prompt(self) -> Optional[AlgoProto]:
-        """Selects parents and operator, then creates a prompt."""
+        """Selects parents and operator, then creates a prompt.
+
+        AlgoProto keys set:
+            - operator: str, the evolutionary operator (i1, e1, e2, m1, m2)
+            - parents: list of selected parent AlgoProto objects (for e1, e2, m1, m2)
+            - prompt: str, the constructed prompt for generation
+        """
         current_pop_size = len(self._database)
 
         # Determine operator
@@ -294,7 +300,14 @@ class EoHSearch(IterativeSearchBase):
         return candidate
 
     @override
+    @override
     def generate(self, candidate: AlgoProto) -> AlgoProto:
+        """Generates a response from the LLM.
+
+        AlgoProto keys set:
+            - response_text: str, the raw LLM response
+            - sample_time: float, time taken for LLM call (via Timer)
+        """
         assert (
             self._llm is not None
         ), "LLM is required for generate(). Use tool_mode=False or provide an LLM."
@@ -406,4 +419,4 @@ class EoHSearch(IterativeSearchBase):
             log_entry["pop_size"] = len(self._database)
             log_entry["best_score"] = self._database.get_best_score()
 
-            self._logger.log_dict_sync(log_entry, "algo")
+            self._logger.log_dict(log_entry, "algo")

@@ -1,28 +1,27 @@
 # Running with YAML Configuration
 
-This guide shows how to run algorithmic using YAML configuration files.
+This guide shows how to run AlgoDisco with a YAML config file.
 
-## YAML Configuration Structure
+## YAML Structure
 
-A complete YAML config has four main sections:
+A typical config has four sections:
 
 ```yaml
 method:
   template_program_path: "path/to/template.txt"
   task_description_path: "path/to/task.txt"
   language: "python"
-  # ... method-specific parameters
 
 llm:
   class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
   kwargs:
     model: "gpt-4o-mini"
-    api_key: null  # Or set OPENAI_API_KEY env var
+    api_key: null
+    base_url: "https://api.openai.com/v1"
 
 evaluator:
   class_path: "my_module.MyEvaluator"
-  kwargs:
-    # Evaluator parameters
+  kwargs: {}
 
 logger:
   class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
@@ -32,11 +31,9 @@ logger:
 
 ## Complete Example
 
-Here's a full config for Online Bin Packing with FunSearch:
+Here is a complete FunSearch config based on the bundled Online Bin Packing example:
 
 ```yaml
-# config.yaml
-
 method:
   template_program_path: "examples/online_bin_packing/template_algo.txt"
   task_description_path: "examples/online_bin_packing/task_description.txt"
@@ -49,109 +46,106 @@ method:
   llm_max_tokens: 1024
   llm_timeout_seconds: 120
   db_num_islands: 5
-  keep_metadata_keys: ["sample_time", "eval_time", "error_msg"]
 
 llm:
   class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
   kwargs:
     model: "gpt-4o-mini"
-    api_key: null  # Set OPENAI_API_KEY env var
+    api_key: null
+    base_url: "https://api.openai.com/v1"
 
 evaluator:
-  class_path: "examples.online_bin_packing.evaluator.OnlineBinPackingEvaluator"
+  class_path: "examples/online_bin_packing/evaluator.py:OnlineBinPackingEvaluator"
   kwargs: {}
 
 logger:
   class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
   kwargs:
-    logdir: "logs/funsearch_obp"
+    logdir: "logs/online_bin_packing_funsearch"
 ```
 
-## Running the Config
+## Run the Config
 
 ```bash
 python -m algodisco.methods.funsearch.main_funsearch --config config.yaml
 ```
 
-## Configuration Options
+## Reusing the Bundled Example
 
-### Method Section
+Instead of writing a config from scratch, start from an existing one:
 
-Common parameters:
+```bash
+cp examples/online_bin_packing/configs/funsearch.yaml my_config.yaml
+python -m algodisco.methods.funsearch.main_funsearch --config my_config.yaml
+```
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `template_program_path` | Path to template file | Required |
-| `task_description_path` | Path to task description | "" |
-| `language` | Programming language | "python" |
-| `num_samplers` | Parallel sampling threads | 4 |
-| `num_evaluators` | Parallel evaluation threads | 4 |
-| `max_samples` | Maximum samples to generate | 1000 |
-| `llm_max_tokens` | Max tokens for LLM response | None |
-| `llm_timeout_seconds` | LLM call timeout | 120 |
+## Common Provider Configs
 
-### LLM Section
-
-Supported providers:
+### OpenAI
 
 ```yaml
-# OpenAI
 llm:
   class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
   kwargs:
     model: "gpt-4o-mini"
     api_key: null
+    base_url: "https://api.openai.com/v1"
+```
 
-# Anthropic Claude
+### Claude
+
+```yaml
 llm:
   class_path: "algodisco.providers.llm.claude_api.ClaudeAPI"
   kwargs:
-    model: "claude-3-haiku-20240307"
+    model: "claude-3-5-sonnet-20241022"
     api_key: null
-
-# vLLM (local)
-llm:
-  class_path: "algodisco.providers.llm.vllm_api.VLLMAPI"
-  kwargs:
-    model: "llama-3-8b"
-    base_url: "http://localhost:8000/v1"
-
-# SGLang (local)
-llm:
-  class_path: "algodisco.providers.llm.sglang_api.SGLangAPI"
-  kwargs:
-    model: "llama-3-8b"
-    base_url: "http://localhost:30000/v1"
 ```
 
-### Using Environment Variables
-
-Instead of hardcoding API keys:
+### vLLM Server Launcher
 
 ```yaml
 llm:
-  class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+  class_path: "algodisco.providers.llm.vllm_server.VLLMServer"
   kwargs:
-    model: "gpt-4o-mini"
-    api_key: null  # Will use OPENAI_API_KEY env var
+    model_path: "meta-llama/Meta-Llama-3-8B-Instruct"
+    port: 8000
+    gpus: 0
 ```
+
+### SGLang Server Launcher
+
+```yaml
+llm:
+  class_path: "algodisco.providers.llm.sglang_server.SGLangServer"
+  kwargs:
+    model_path: "meta-llama/Meta-Llama-3-8B-Instruct"
+    port: 30000
+    gpus: 0
+```
+
+## Using Environment Variables
+
+For OpenAI:
 
 ```bash
 export OPENAI_API_KEY="your-api-key"
-python -m algodisco.methods.funsearch.main_funsearch --config config.yaml
 ```
 
-## Alternative: Run with Shell Script
+Then keep `api_key: null` in YAML.
 
-We provide shell scripts for common setups:
+## Convenience Script
+
+The repository includes a shell wrapper for the Online Bin Packing configs:
 
 ```bash
-# Run with different methods
 bash examples/run_online_bin_packing.sh funsearch
 bash examples/run_online_bin_packing.sh openevolve
 bash examples/run_online_bin_packing.sh eoh
 ```
 
+That script is just a convenience wrapper around the `python -m algodisco.methods...` entry points.
+
 ## Next Steps
 
-Learn about [running with Python code](./07-run-with-python.md) instead.
+If you want more control or easier debugging, continue with [running through Python code](./07-run-with-python.md).

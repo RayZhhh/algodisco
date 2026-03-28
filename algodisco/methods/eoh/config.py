@@ -12,7 +12,23 @@ class EoHOperators(Enum): ...
 
 @dataclass
 class EoHConfig(SearchConfigBase):
-    """Configuration for an EoH (Evolution of Heuristics) Search run."""
+    """Configuration for an EoH (Evolution of Heuristics) Search run.
+
+    Attributes:
+        template_program: Template program source code used to initialize search.
+        task_description: Natural-language task description injected into prompts.
+        max_samples: Maximum number of candidates to sample before stopping.
+        pop_size: Target population size maintained by the database.
+        selection_num: Number of parents selected for multi-parent operators.
+        use_e2_operator: Whether to enable the E2 crossover-style operator.
+        use_m1_operator: Whether to enable the M1 mutation operator.
+        use_m2_operator: Whether to enable the M2 mutation operator.
+        llm_max_tokens: Optional max token limit for each LLM response.
+        llm_timeout_seconds: Timeout in seconds for each LLM request.
+        db_save_frequency: Frequency for persisting population snapshots to the logger.
+        init_samples_ratio: Multiplier controlling samples used during initialization.
+        keep_metadata_keys: Candidate metadata keys preserved when saving results.
+    """
 
     template_program: str
     task_description: str = ""

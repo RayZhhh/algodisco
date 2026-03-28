@@ -1,155 +1,97 @@
-# Quick Start
+# 快速开始
 
-This guide will help you run your first algorithm search using algorithmic.
+这份指南给出一条最稳妥的上手路径：直接运行仓库内置的在线装箱示例，并使用 FunSearch 作为搜索方法。
 
-## Overview
+## 你将运行什么
 
-The typical workflow consists of:
-1. Prepare a template program and task description
-2. Configure the search method via YAML
-3. Implement an evaluator for your problem
-4. Run the search
+这个示例由以下几个部分组成：
 
-## Step 1: Prepare Template Program
+- `examples/online_bin_packing/template_algo.txt`：待优化的模板程序
+- `examples/online_bin_packing/task_description.txt`：任务描述
+- `examples/online_bin_packing/evaluator.py`：评测器实现
+- `examples/online_bin_packing/configs/funsearch.yaml`：可直接运行的配置文件
 
-Create a template Python program that solves your problem. The template should contain:
-- Basic structure for solving the problem
-- Placeholder functions to be evolved
-- A `solve()` function that returns the answer
+## 第一步：完成安装
 
-Example template for finding the maximum value in a list:
-
-```python
-from typing import List
-
-def solve(arr: List[int]) -> int:
-    """Find the maximum value in the array."""
-    # TODO: Implement this function
-    return arr[0] if arr else 0
-```
-
-## Step 2: Create Task Description
-
-Create a text file describing the task:
-
-```
-Implement the `solve(arr: List[int]) -> int` function to find the maximum value in the given array.
-The function should handle edge cases like empty arrays.
-```
-
-## Step 3: Create Configuration File
-
-Create a YAML configuration file (e.g., `config.yaml`):
-
-```yaml
-method:
-  template_program_path: "template.py"
-  task_description_path: "task.txt"
-  language: "python"
-  num_samplers: 4
-  num_evaluators: 4
-  examples_per_prompt: 2
-  samples_per_prompt: 4
-  max_samples: 100
-  llm_max_tokens: 1024
-  llm_timeout_seconds: 120
-  db_num_islands: 10
-
-llm:
-  class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
-  kwargs:
-    model: "gpt-3.5-turbo"
-    api_key: "your-api-key"
-
-evaluator:
-  class_path: "your_evaluator_module.YourEvaluator"
-  kwargs: {}
-
-logger:
-  class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
-  kwargs:
-    logdir: "logs/my_search"
-```
-
-## Step 4: Implement Evaluator
-
-Create your evaluator class:
-
-```python
-from algodisco.base.evaluator import Evaluator, EvalResult
-
-
-class YourEvaluator(Evaluator):
-    def __init__(self):
-        self.test_cases = [
-            {"input": [1, 2, 3], "expected": 3},
-            {"input": [-1, -5, -2], "expected": -1},
-            {"input": [0], "expected": 0},
-            {"input": [], "expected": 0},
-        ]
-
-    def evaluate_program(self, program_str: str) -> EvalResult:
-        try:
-            # Execute the program in a sandbox
-            local_ns = {}
-            exec(program_str, {}, local_ns)
-
-            if "solve" not in local_ns:
-                return {"score": 0, "error_msg": "solve function not found"}
-
-            solve_fn = local_ns["solve"]
-
-            # Run test cases
-            correct = 0
-            for tc in self.test_cases:
-                result = solve_fn(tc["input"])
-                if result == tc["expected"]:
-                    correct += 1
-
-            score = correct / len(self.test_cases)
-            return {"score": score}
-
-        except Exception as e:
-            return {"score": 0, "error_msg": str(e)}
-```
-
-## Step 5: Run the Search
-
-Run the search using the appropriate entry point:
+请先按照 [安装指南](installation.md) 配好环境。最少需要执行：
 
 ```bash
-# For FunSearch
-python algodisco/methods/funsearch/main_funsearch.py --config config.yaml
-
-# For OpenEvolve
-python algodisco/methods/openevolve/main_openevolve.py --config config.yaml
-
-# For (1+1)-EPS
-python algodisco/methods/one_plus_one_eps/main_one_plus_one_eps.py --config config.yaml
-
-# For Random Sampling
-python algodisco/methods/randsample/main_randsample.py --config config.yaml
+pip install -e .
+export OPENAI_API_KEY="your-openai-key"
 ```
 
-## Monitoring Results
+## 第二步：检查示例配置
 
-Results are saved to the log directory specified in your configuration. You can analyze the logs:
+打开下面这个配置文件：
 
-```python
-import pickle
-
-# Load logged results
-with open("logs/my_search/algo.pkl", "rb") as f:
-    results = pickle.load(f)
-
-# Find best solution
-best = max(results, key=lambda x: x.get("score", 0))
-print(f"Best score: {best['score']}")
-print(f"Best program:\n{best['program']}")
+```bash
+examples/online_bin_packing/configs/funsearch.yaml
 ```
 
-## Next Steps
+最重要的几个字段是：
 
-- [Configuration Guide](configuration.md) - Detailed configuration options
-- [Search Methods](../user-guide/search-methods/index.md) - Explore different search algorithms
-- [LLM Providers](../user-guide/llm-providers/index.md) - Configure different LLM backends
+- `method.template_program_path`：算法模板文件
+- `method.task_description_path`：会注入提示词的任务描述
+- `llm.class_path`：要实例化的模型后端
+- `evaluator.class_path`：负责打分的评测器
+- `logger.kwargs.logdir`：实验输出目录
+
+你可以保持 `api_key: null`，改用环境变量 `OPENAI_API_KEY`；也可以在本地调试时直接把 key 写进配置文件。
+
+## 第三步：运行 FunSearch
+
+在仓库根目录执行：
+
+```bash
+python -m algodisco.methods.funsearch.main_funsearch --config examples/online_bin_packing/configs/funsearch.yaml
+```
+
+程序启动后会持续生成候选程序、执行评测并写入日志。默认输出目录是：
+
+```text
+logs/online_bin_packing_funsearch
+```
+
+## 第四步：查看输出
+
+运行开始后，你可以重点关注日志目录中的内容，通常会包括：
+
+- 序列化的实验产物
+- 每个候选程序的分数与元数据
+- 采样耗时、执行耗时、错误信息等调试信息
+
+## 如何切换到其他搜索方法
+
+同一个在线装箱示例已经提供了多种方法对应的配置。只需要替换模块和配置文件：
+
+| 方法 | 命令 |
+| --- | --- |
+| FunSearch | `python -m algodisco.methods.funsearch.main_funsearch --config examples/online_bin_packing/configs/funsearch.yaml` |
+| OpenEvolve | `python -m algodisco.methods.openevolve.main_openevolve --config examples/online_bin_packing/configs/openevolve.yaml` |
+| EoH | `python -m algodisco.methods.eoh.main_eoh --config examples/online_bin_packing/configs/eoh.yaml` |
+| (1+1)-EPS | `python -m algodisco.methods.one_plus_one_eps.main_one_plus_one_eps --config examples/online_bin_packing/configs/one_plus_one_eps.yaml` |
+| RandSample | `python -m algodisco.methods.randsample.main_randsample --config examples/online_bin_packing/configs/randsample.yaml` |
+| BehaveSim | `python -m algodisco.methods.funsearch_behavesim.main_behavesim_search --config examples/online_bin_packing/configs/behavesim.yaml` |
+
+## 如何改成自己的任务
+
+在示例跑通后，复制一份配置文件，并替换以下内容：
+
+- `template_program_path`：改成你的模板程序
+- `task_description_path`：改成你的任务描述
+- `evaluator.class_path`：改成你的评测器实现
+- `logger.kwargs.logdir`：改成新的实验输出目录
+
+你的评测器必须继承 `algodisco.base.evaluator.Evaluator`，并实现 `evaluate_program(program_str: str)`。
+
+## 常见失败原因
+
+- 没有设置 API Key，导致模型调用在采样前就失败
+- 不在仓库根目录执行命令，导致示例中的相对路径找不到文件
+- `class_path` 写错，动态导入阶段直接报错
+
+## 下一步
+
+- 继续阅读 [配置指南](configuration.md)，理解 YAML 配置是如何被加载的。
+- 查看 [搜索方法](../user-guide/search-methods/index.md)，选择更适合你任务的方法。
+- 如果你要扩展框架，请继续阅读开发者文档。

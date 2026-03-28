@@ -140,7 +140,7 @@ class OnePlusOneEPS(IterativeSearchBase):
             self._executor.shutdown(wait=True)
             if self._logger:
                 logging.info("Finalizing logger...")
-                self._logger.finish_sync()
+                self._logger.finish()
             logging.info("Search finished.")
 
     @override
@@ -208,7 +208,12 @@ class OnePlusOneEPS(IterativeSearchBase):
 
     @override
     def select_and_create_prompt(self) -> Optional[AlgoProto]:
-        """Selects the best program and creates a prompt."""
+        """Selects the best program and creates a prompt.
+
+        AlgoProto keys set:
+            - parents: list containing the best program copy
+            - prompt: str, the constructed prompt for generation
+        """
         with self._lock:
             if not self._best_program:
                 return None
@@ -238,7 +243,12 @@ class OnePlusOneEPS(IterativeSearchBase):
 
     @override
     def generate(self, candidate: AlgoProto) -> AlgoProto:
-        """Calls the LLM using candidate['prompt'] and stores 'response_text' in the candidate."""
+        """Calls the LLM using candidate['prompt'] and stores 'response_text' in the candidate.
+
+        AlgoProto keys set:
+            - response_text: str, the raw LLM response
+            - sample_time: float, time taken for LLM call (via Timer)
+        """
         assert (
             self._llm is not None
         ), "LLM is required for generate(). Use tool_mode=False or provide an LLM."
@@ -253,7 +263,14 @@ class OnePlusOneEPS(IterativeSearchBase):
 
     @override
     def evaluate(self, candidate: AlgoProto) -> AlgoProto:
-        """Evaluates 'candidate.program' and updates 'candidate.score' in-place."""
+        """Evaluates 'candidate.program' and updates 'candidate.score' in-place.
+
+        AlgoProto keys set:
+            - execution_time: float, time taken to execute the program
+            - error_msg: str, error message if evaluation failed
+            - score: float, the evaluated score
+            - eval_time: float, total evaluation time (via Timer)
+        """
         if not candidate or not candidate.program:
             return candidate
 
@@ -309,7 +326,7 @@ class OnePlusOneEPS(IterativeSearchBase):
                     "sample_time": 0.0 if is_template else sample_time_val,
                 }
             )
-            self._logger.log_dict_sync(log_entry, "algo")
+            self._logger.log_dict(log_entry, "algo")
 
     @override
     def register(self, algo_proto: AlgoProto):

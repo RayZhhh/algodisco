@@ -1,8 +1,6 @@
-# OpenEvolve Config for Online Bin Packing
-
 method:
-  template_program_path: "examples/online_bin_packing/template_algo.txt"
-  task_description_path: "examples/online_bin_packing/task_description.txt"
+  template_program_path: "path/to/template.py"
+  task_description_path: "path/to/task_description.txt"
   language: "python"
   diff_based_evolution: false
   num_top_programs: 1
@@ -27,12 +25,12 @@ method:
   exploitation_ratio: 0.7
   elite_selection_ratio: 0.1
   samples_per_prompt: 1
-  max_samples: 100
+  max_samples: 1000
   llm_max_tokens: 1024
   llm_timeout_seconds: 120
-  db_num_islands: 5
+  db_num_islands: 10
   db_reset_period: 14400
-  db_save_frequency: 50
+  db_save_frequency: 100
   feature_dimensions:
     - "complexity"
     - "diversity"
@@ -50,16 +48,15 @@ method:
 llm:
   class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
   kwargs:
-    model: "gpt-4o-mini"
-    # TODO: Replace with your API key, or set OPENAI_API_KEY environment variable
-    api_key: null
+    model: "gpt-3.5-turbo"
+    api_key: "your-api-key"
     base_url: "https://api.openai.com/v1"
 
 evaluator:
-  class_path: "examples/online_bin_packing/evaluator.py:OnlineBinPackingEvaluator"
+  class_path: "path/to/evaluator.py:YourEvaluator"
   kwargs: {}
 
 logger:
   class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
   kwargs:
-    logdir: "logs/online_bin_packing_openevolve"
+    logdir: "logs/openevolve_log"

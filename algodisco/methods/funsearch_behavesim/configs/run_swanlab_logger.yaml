@@ -2,8 +2,8 @@ method:
   template_program_path: "path/to/template.py"
   task_description_path: "path/to/task_description.txt"
   language: "python"
-  num_samplers: 4
-  num_evaluators: 4
+  num_samplers: auto
+  num_evaluators: auto
   examples_per_prompt: 2
   samples_per_prompt: 4
   max_samples: 1000
@@ -15,15 +15,22 @@ method:
   recluster_threshold: 100
   # Database configuration (nested under database_config)
   database_config:
+    algo_sim_calculator:
+      class_path: "algodisco.methods.funsearch_behavesim.similarity_calculator.BehaveSimCalculator"
+      kwargs:
+        use_dtw: true
+        allow_inequal_len: true
+        traj_sample_k: null
+        traj_trunc_n: null
     # Island specifications
     n_islands: 10
     island_capacity: 100
-    # Selection parameters
-    selection_exploitation_intensity: 1.0
-    # Similarity calculation weights
-    ast_dfg_weight: 1.0
-    embedding_weight: 1.0
-    behavioral_weight: 1.0
+    # Cluster sampling parameters
+    cluster_sampling_temperature_init: 0.1
+    cluster_sampling_temperature_period: 30000
+    # Registration acceleration parameters
+    num_sim_caculator_workers: 4
+    async_register: true
   keep_metadata_keys: ["sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
   debug_mode: false
   debug_mode_crash: false
@@ -43,10 +50,15 @@ emb_llm:
     base_url: "https://api.openai.com/v1"
 
 evaluator:
-  class_path: "your_evaluator_module.YourEvaluator"
+  class_path: "path/to/evaluator.py:YourEvaluator"
   kwargs: {}
 
 logger:
-  class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
+  class_path: "algodisco.providers.logger.swanlab_logger.BaseSwanLabLogger"
   kwargs:
     logdir: "logs/behavesim_log"
+    project: "your-swanlab-project"
+    experiment_name: "funsearch_behavesim-run"
+    group: "funsearch_behavesim"
+    swanlab_logdir: "logs/behavesim_log/swanlab"
+    api_key: null
