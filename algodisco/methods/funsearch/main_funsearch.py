@@ -21,7 +21,7 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        default=str(PROJECT_ROOT / "configs" / "funsearch.yaml"),
+        default=str(PROJECT_ROOT / "examples" / "online_bin_packing" / "configs" / "funsearch.yaml"),
         help="Path to the YAML config file",
     )
     args = parser.parse_args()

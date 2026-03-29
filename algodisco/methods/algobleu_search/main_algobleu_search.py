@@ -21,7 +21,7 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        default=str(PROJECT_ROOT / "configs" / "algobleu_search.yaml"),
+        default=str(PROJECT_ROOT / "algodisco" / "methods" / "algobleu_search" / "configs" / "run_pickle_logger.yaml"),
         help="Path to the YAML config file",
     )
     args = parser.parse_args()
