@@ -15,7 +15,7 @@ except ImportError:
     from typing_extensions import override
 
 from algodisco.base.algo import AlgoProto
-from algodisco.base.evaluator import Evaluator
+from algodisco.base.evaluator import EvalResult, Evaluator
 from algodisco.base.llm import LanguageModel
 from algodisco.base.search_method import IterativeSearchBase
 from algodisco.base.logger import AlgoSearchLoggerBase
@@ -37,7 +37,7 @@ class FunSearch(IterativeSearchBase):
     def __init__(
         self,
         config: FunSearchConfig,
-        evaluator,
+        evaluator: Evaluator[EvalResult],
         llm: LanguageModel = None,
         logger: Optional[AlgoSearchLoggerBase] = None,
         prompt_constructor: PromptAdapter = PromptAdapter(),
@@ -54,7 +54,7 @@ class FunSearch(IterativeSearchBase):
             raise ValueError("The provided template program is empty.")
 
         self._llm: LanguageModel = llm
-        self._evaluator: Evaluator = evaluator
+        self._evaluator: Evaluator[EvalResult] = evaluator
         self._database = ProgramsDatabase(
             num_islands=config.db_num_islands,
             max_island_capacity=config.db_max_island_capacity,

@@ -15,7 +15,7 @@ except ImportError:
     from typing_extensions import override
 
 from algodisco.base.algo import AlgoProto
-from algodisco.base.evaluator import Evaluator
+from algodisco.base.evaluator import EvalResult, Evaluator
 from algodisco.base.llm import LanguageModel
 from algodisco.base.search_method import IterativeSearchBase
 from algodisco.base.logger import AlgoSearchLoggerBase
@@ -36,7 +36,7 @@ class OnePlusOneEPS(IterativeSearchBase):
     def __init__(
         self,
         config: OnePlusOneEPSConfig,
-        evaluator,
+        evaluator: Evaluator[EvalResult],
         llm: LanguageModel = None,
         logger: Optional[AlgoSearchLoggerBase] = None,
         prompt_constructor: PromptAdapter = PromptAdapter(),
@@ -53,7 +53,7 @@ class OnePlusOneEPS(IterativeSearchBase):
             raise ValueError("The provided template program is empty.")
 
         self._llm = llm
-        self._evaluator = evaluator
+        self._evaluator: Evaluator[EvalResult] = evaluator
         self._logger = logger
         self._prompt_constructor = prompt_constructor
 

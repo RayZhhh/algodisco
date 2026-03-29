@@ -15,7 +15,7 @@ except ImportError:
     from typing_extensions import override
 
 from algodisco.base.llm import LanguageModel
-from algodisco.base.evaluator import Evaluator
+from algodisco.base.evaluator import EvalResult, Evaluator
 from algodisco.base.algo import AlgoProto
 from algodisco.base.search_method import IterativeSearchBase
 from algodisco.base.logger import AlgoSearchLoggerBase
@@ -37,7 +37,7 @@ class OpenEvolve(IterativeSearchBase):
     def __init__(
         self,
         config: OpenEvolveConfig,
-        evaluator,
+        evaluator: Evaluator[EvalResult],
         llm: LanguageModel = None,
         logger: Optional[AlgoSearchLoggerBase] = None,
         prompt_constructor: PromptConstructor = None,
@@ -54,7 +54,7 @@ class OpenEvolve(IterativeSearchBase):
             raise ValueError("The provided template program is empty.")
 
         self._llm = llm
-        self._evaluator = evaluator
+        self._evaluator: Evaluator[EvalResult] = evaluator
         self._database = ProgramDatabase(config)
         self._logger = logger
 

@@ -16,9 +16,6 @@ AlgoDisco: Method Implementations and Tools for<br/>LLM-driven Automated Algorit
   <a href="https://github.com/RayZhhh/algodisco/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/RayZhhh/algodisco" alt="License">
   </a>
-  <a href="https://algodisco.readthedocs.io/">
-    <img src="https://img.shields.io/badge/documentation-blue" alt="Documentation">
-  </a>
 </p>
 
 ## ✨ Key features
@@ -160,7 +157,7 @@ If you use AlgoDisco in your research, please cite:
 
 ```bibtex
 @misc{algodisco,
-  title = {AlgoDisco: Method Implementations and Tools for<br/>LLM-driven Automated Algorithm Design},
+  title = {AlgoDisco: Method Implementations and Tools for LLM-driven Automated Algorithm Design},
   author = {Rui Zhang},
   year = {2026},
   url = {https://github.com/RayZhhh/algodisco},

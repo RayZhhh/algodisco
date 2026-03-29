@@ -17,7 +17,7 @@ except ImportError:
 
 from algodisco.base.llm import LanguageModel
 from algodisco.base.algo import AlgoProto
-from algodisco.base.evaluator import Evaluator
+from algodisco.base.evaluator import EvalResult, Evaluator
 from algodisco.base.search_method import IterativeSearchBase
 from algodisco.base.logger import AlgoSearchLoggerBase
 from algodisco.common.timer import Timer
@@ -39,7 +39,7 @@ class EoHSearch(IterativeSearchBase):
     def __init__(
         self,
         config: EoHConfig,
-        evaluator,
+        evaluator: Evaluator[EvalResult],
         llm: LanguageModel = None,
         logger: Optional[AlgoSearchLoggerBase] = None,
         prompt_constructor: EoHPromptAdapter = EoHPromptAdapter(),
@@ -56,7 +56,7 @@ class EoHSearch(IterativeSearchBase):
             raise ValueError("The provided template program is empty.")
 
         self._llm = llm
-        self._evaluator = evaluator
+        self._evaluator: Evaluator[EvalResult] = evaluator
         self._database = EoHDatabase(config.pop_size)
         self._logger = logger
         self._prompt_constructor = prompt_constructor
