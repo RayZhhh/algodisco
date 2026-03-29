@@ -71,7 +71,6 @@ logs/online_bin_packing_funsearch
 | EoH | `python -m algodisco.methods.eoh.main_eoh --config examples/online_bin_packing/configs/eoh.yaml` |
 | (1+1)-EPS | `python -m algodisco.methods.one_plus_one_eps.main_one_plus_one_eps --config examples/online_bin_packing/configs/one_plus_one_eps.yaml` |
 | RandSample | `python -m algodisco.methods.randsample.main_randsample --config examples/online_bin_packing/configs/randsample.yaml` |
-| BehaveSim | `python -m algodisco.methods.funsearch_behavesim.main_behavesim_search --config examples/online_bin_packing/configs/behavesim.yaml` |
 
 ## 如何改成自己的任务
 

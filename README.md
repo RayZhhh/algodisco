@@ -23,7 +23,7 @@ AlgoDisco: Method Implementations and Tools for<br/>LLM-driven Automated Algorit
 
 ## ✨ Key features
 
-- **Multiple Search Methods**: FunSearch, OpenEvolve, EoH, (1+1)-EPS, RandSample, BehaveSim
+- **Multiple Search Methods**: FunSearch, OpenEvolve, EoH, (1+1)-EPS, RandSample
 - **Multiple LLM Providers**: OpenAI, Claude, vLLM, SGLang
 - **Sandboxed Execution**: Safe evaluation of generated algorithms
 - **Flexible Configuration**: YAML-based configuration system
@@ -74,7 +74,6 @@ For more details, see [Quick Start](docs_en/getting-started/quickstart.md).
 - EoH
 - (1+1)-EPS
 - RandSample
-- BehaveSim
 
 ## 💡 Quick example
 
@@ -103,7 +102,6 @@ Configs for each method are in `examples/online_bin_packing/configs/`:
 | EoH | `configs/eoh.yaml` |
 | (1+1)-EPS | `configs/one_plus_one_eps.yaml` |
 | RandSample | `configs/randsample.yaml` |
-| BehaveSim | `configs/behavesim.yaml` |
 
 1. Copy and edit the config:
    ```bash
@@ -129,12 +127,9 @@ Configs for each method are in `examples/online_bin_packing/configs/`:
 
    # Run with RandSample
    bash examples/run_online_bin_packing.sh randsample
-
-   # Run with BehaveSim
-   bash examples/run_online_bin_packing.sh behavesim
    ```
 
-Available methods: `funsearch`, `openevolve`, `eoh`, `one_plus_one_eps`, `randsample`, `behavesim`
+Available methods: `funsearch`, `openevolve`, `eoh`, `one_plus_one_eps`, `randsample`
 
 For SwanLab integration, use `funsearch_swanlab`:
    ```bash

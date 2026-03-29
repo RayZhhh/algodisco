@@ -19,7 +19,6 @@ AlgoDisco currently includes the following search methods:
 - EoH
 - (1+1)-EPS
 - RandSample
-- BehaveSim
 
 Supported LLM backends include:
 

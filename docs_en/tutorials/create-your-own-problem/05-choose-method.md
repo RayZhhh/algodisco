@@ -11,7 +11,6 @@ algodisco provides multiple search methods. Here's how to choose the right one f
 | EoH | Evolution of heuristics | Medium |
 | (1+1)-EPS | Simple evolutionary strategy | Low |
 | RandSample | Baseline, quick testing | Low |
-| BehaveSim | Behavioral similarity matters | High |
 
 ## Method Details
 
@@ -113,23 +112,6 @@ config = FunSearchConfig(
 - When diversity is not important
 - Quick sanity check
 
-### BehaveSim
-
-**Best for**: When behavioral similarity matters
-
-**How it works**:
-- Uses AST +DFG for similarity
-- Behavioral embedding
-- Clustering based on behavior
-
-**When to use**:
-- When program behavior is more important than structure
-- Complex problems with many valid solutions
-
-**Key parameters**:
-- `database_config`: Island and similarity settings
-- `emb_llm`: Embedding model for behavior
-
 ## Decision Guide
 
 ### Start Here
@@ -139,9 +121,7 @@ Do you have a good seed solution?
 ├─ Yes → Try OpenEvolve
 └─ No → Is this a simple problem?
          ├─ Yes → Try (1+1)-EPS or RandSample
-         └─ No → Is behavioral similarity important?
-                  ├─ Yes → Try BehaveSim
-                  └─ No → Try FunSearch (default)
+         └─ No → Try FunSearch (default)
 ```
 
 ### Quick Reference
@@ -152,7 +132,6 @@ Do you have a good seed solution?
 | Have baseline to improve | OpenEvolve |
 | Need fast results | (1+1)-EPS |
 | Need baseline to compare | RandSample |
-| Complex behavior matters | BehaveSim |
 | Heuristic optimization | EoH |
 
 ## Next Steps

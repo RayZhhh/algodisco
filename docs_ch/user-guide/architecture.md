@@ -20,7 +20,6 @@ AlgoDisco 采用模块化架构设计，包含以下核心组件：
 | - VLLMServer  |    | - EoH          |    +----------------+
 | - SGLangServer|    | - (1+1)-EPS    |
 +----------------+    | - RandSample   |
-                      | - BehaveSim    |
                       +----------------+
                               |
                               v
@@ -67,7 +66,6 @@ YAML 配置文件定义搜索参数、LLM 提供商、评估器和日志器。
 | EoH | `EoH` |
 | (1+1)-EPS | `OnePlusOneEPS` |
 | RandSample | `RandSample` |
-| BehaveSim | `BehaveSim` |
 
 ### 4. 评估器 (Evaluator)
 

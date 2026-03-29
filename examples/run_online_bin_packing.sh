@@ -8,7 +8,6 @@
 #   ./run_online_bin_packing.sh eoh             # Run EoH
 #   ./run_online_bin_packing.sh one_plus_one_eps # Run (1+1)-EPS
 #   ./run_online_bin_packing.sh randsample      # Run RandSample
-#   ./run_online_bin_packing.sh behavesim       # Run BehaveSim
 #
 # For SwanLab version:
 #   ./run_online_bin_packing.sh funsearch_swanlab
@@ -42,12 +41,9 @@ case "$METHOD" in
     randsample)
         MODULE="algodisco.methods.randsample.main_randsample"
         ;;
-    behavesim)
-        MODULE="algodisco.methods.funsearch_behavesim.main_behavesim_search"
-        ;;
     *)
         echo "Unknown method: $METHOD"
-        echo "Available methods: funsearch, openevolve, eoh, one_plus_one_eps, randsample, behavesim, funsearch_swanlab"
+        echo "Available methods: funsearch, openevolve, eoh, one_plus_one_eps, randsample, funsearch_swanlab"
         exit 1
         ;;
 esac

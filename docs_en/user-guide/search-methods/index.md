@@ -9,4 +9,3 @@
 | [EoH](eoh.md) | `EoHSearch` |
 | [(1+1)-EPS](one-plus-one-eps.md) | `OnePlusOneEPS` |
 | [RandSample](randsample.md) | `RandSample` |
-| [BehaveSim](behavesim.md) | `BehaveSim` |

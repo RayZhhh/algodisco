@@ -76,7 +76,6 @@ llm:
 
 - FunSearch 会使用 `db_num_islands` 等归档与岛模型参数。
 - OpenEvolve 会增加 `diff_based_evolution`、`feature_dimensions`、`archive_size` 等演化与归档相关配置。
-- BehaveSim 会额外引入 `emb_llm` 配置块，用于相似度相关能力。
 
 ## 一个最小可用示例
 

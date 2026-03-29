@@ -231,3 +231,5 @@ _ignore/database_old.py
 main.py
 CLAUDE.md
 FunSearch-AdmissibleSet-run1
+algodisco/methods/funsearch_behavesim/
+algodisco/methods/algobleu_search/
