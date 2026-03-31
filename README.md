@@ -7,15 +7,9 @@ AlgoDisco: Method Implementations and Tools for<br/>LLM-driven Automated Algorit
 </h1>
 
 <p align="center">
-  <a href="https://github.com/RayZhhh/algodisco">
-    <img src="https://img.shields.io/github/stars/RayZhhh/algodisco" alt="Stars">
-  </a>
-  <a href="https://github.com/RayZhhh/algodisco">
-    <img src="https://img.shields.io/github/forks/RayZhhh/algodisco" alt="Forks">
-  </a>
-  <a href="https://github.com/RayZhhh/algodisco/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/RayZhhh/algodisco" alt="License">
-  </a>
+  <a href="https://github.com/RayZhhh/algodisco"><img src="https://img.shields.io/github/stars/RayZhhh/algodisco" alt="Stars"></a>
+  <a href="https://github.com/RayZhhh/algodisco"><img src="https://img.shields.io/github/forks/RayZhhh/algodisco" alt="Forks"></a>
+  <a href="https://github.com/RayZhhh/algodisco/blob/main/LICENSE"><img src="https://img.shields.io/github/license/RayZhhh/algodisco" alt="License"></a>
 </p>
 
 ## ✨ Key features
