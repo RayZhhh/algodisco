@@ -120,11 +120,10 @@ class BaseWandbLogger(BasePickleLogger):
 
         return log_items
 
-    def _pre_log_hook(self, log_item: Dict, item_name: str):
+    def _pre_log_hook(self, log_item: Dict, item_name: str, *, count: int, step: int):
         """Logs metrics to wandb before caching."""
         log_items = self._prepare_wandb_log_items(log_item)
-        counter = self._counters.get(item_name, 1)
-        self._wandb_run.log(log_items, step=counter)
+        self._wandb_run.log(log_items, step=step)
 
     async def finish(self):
         await super().finish()

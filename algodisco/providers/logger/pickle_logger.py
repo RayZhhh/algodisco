@@ -21,6 +21,9 @@ class BasePickleLogger(AlgoSearchLoggerBase):
         """
         self._logdir = logdir
         self._lock = Lock()
+        # External backends such as W&B/SwanLab expect one monotonic step stream
+        # for the whole run, even when multiple item types are interleaved.
+        self._global_step = 0
         self._counters: Dict[str, int] = {}  # item count within each batch
         self._batch_counters: Dict[str, int] = {}  # batch number for each item_name
         self._caches: Dict[str, list] = {}
@@ -61,7 +64,7 @@ class BasePickleLogger(AlgoSearchLoggerBase):
         """Get the path for a specific batch file."""
         return self._get_item_dir(item_name) / f"{batch_num}.pkl"
 
-    def _pre_log_hook(self, log_item: Dict, item_name: str):
+    def _pre_log_hook(self, log_item: Dict, item_name: str, *, count: int, step: int):
         """A hook executed before an item is logged. Assumes lock is held."""
         pass
 
@@ -98,16 +101,20 @@ class BasePickleLogger(AlgoSearchLoggerBase):
     def log_dict(self, log_item: Dict, item_name: str):
         """Synchronous version of log_dict."""
         with self._lock:
-            self._pre_log_hook(log_item, item_name)
-
             if item_name not in self._counters:
                 self._counters[item_name] = 1
                 self._batch_counters[item_name] = 1
                 self._caches[item_name] = []
                 self._flush_counts[item_name] = 0
 
-            log_item["count"] = self._counters[item_name]
-            self._counters[item_name] += 1
+            count = self._counters[item_name]
+            step = self._global_step + 1
+
+            log_item["count"] = count
+            self._pre_log_hook(log_item, item_name, count=count, step=step)
+
+            self._counters[item_name] = count + 1
+            self._global_step = step
 
             self._caches[item_name].append(log_item)
 

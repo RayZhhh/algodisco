@@ -23,7 +23,7 @@ class AlgoProto:
 
     def __setitem__(self, key, value):
         assert isinstance(key, str)
-        assert key not in ["program", "language", "algo_id", "score", "attributes"]
+        assert key not in ["program", "language", "algo_id", "score", "metadata"]
         self.metadata[key] = value
 
     def __getitem__(self, key):
@@ -31,20 +31,20 @@ class AlgoProto:
 
     def get(self, key, default=None):
         assert isinstance(key, str)
-        if key in ["program", "language", "algo_id", "score", "attributes"]:
+        if key in ["program", "language", "algo_id", "score", "metadata"]:
             return getattr(self, key)
         return self.metadata.get(key, default)
 
     def pop(self, key, *args):
         assert isinstance(key, str)
-        assert key not in ["program", "language", "algo_id", "score", "attributes"]
+        assert key not in ["program", "language", "algo_id", "score", "metadata"]
         return self.metadata.pop(key, *args)
 
     def get_markdown_code_block(self) -> str:
         return f"```{self.language}\n{str(self.program).strip()}\n```"
 
     def update(self, data: Dict) -> None:
-        """Update attributes from dict."""
+        """Update metadata from dict."""
         data_copy = data.copy()
 
         if "program" in data_copy:
@@ -55,6 +55,10 @@ class AlgoProto:
             self.algo_id = data_copy.pop("algo_id")
         if "score" in data_copy:
             self.score = data_copy.pop("score")
+        if "metadata" in data_copy:
+            attrs = data_copy.pop("metadata")
+            assert isinstance(attrs, dict)
+            self.metadata.update(attrs)
         if "attributes" in data_copy:
             attrs = data_copy.pop("attributes")
             assert isinstance(attrs, dict)
@@ -86,6 +90,10 @@ class AlgoProto:
             program=program, language=language, algo_id=algo_id, score=score
         )
 
+        if "metadata" in data_copy:
+            attrs = data_copy.pop("metadata")
+            assert isinstance(attrs, dict)
+            algo_proto.metadata.update(attrs)
         if "attributes" in data_copy:
             attrs = data_copy.pop("attributes")
             assert isinstance(attrs, dict)
@@ -123,7 +131,7 @@ class AlgoProto:
         # Track the new instance in the memo to handle potential cyclic references
         memo[id(self)] = new_instance
 
-        # Deeply copy the attributes dictionary
+        # Deeply copy the metadata dictionary
         new_instance.metadata = copy.deepcopy(self.metadata, memo)
         return new_instance
 
