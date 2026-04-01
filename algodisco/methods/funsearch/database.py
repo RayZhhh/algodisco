@@ -109,6 +109,7 @@ class ProgramsDatabase:
         """Registers 'program' in the database."""
         with self._lock:
             program = copy.deepcopy(program)
+            program.pop("parents", None)
             if island_id is None:
                 # This is a program added at the beginning, so adding it to all islands
                 for island_id in range(len(self._islands)):

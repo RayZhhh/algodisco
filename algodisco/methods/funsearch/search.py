@@ -410,7 +410,9 @@ class FunSearch(IterativeSearchBase):
                 registered_algo_proto.keep_metadata_keys(
                     self._config.keep_metadata_keys
                 )
-                self._database.register_program(algo_proto, island_id=island_id)
+                self._database.register_program(
+                    registered_algo_proto, island_id=island_id
+                )
 
             # Print, save to algo using logger, save database using logger.
             self._log(algo_proto)

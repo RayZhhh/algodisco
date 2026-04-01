@@ -22,7 +22,7 @@ class EoHDatabase:
     def register_algo(self, algo: AlgoProto):
         """Adds a new algorithm to the population and performs survival if full."""
         with self._lock:
-            if algo.score is None:
+            if algo.score is None or not np.isfinite(algo.score):
                 return
 
             # Avoid duplicates by code or score
@@ -48,8 +48,7 @@ class EoHDatabase:
             if not self._population:
                 return []
 
-            # Filter out inf scores
-            valid_algos = [a for a in self._population if not np.isinf(a.score)]
+            valid_algos = [a for a in self._population if np.isfinite(a.score)]
             if not valid_algos:
                 return []
 
@@ -69,7 +68,10 @@ class EoHDatabase:
         with self._lock:
             if not self._population:
                 return -float("inf")
-            return max(a.score for a in self._population)
+            valid_scores = [a.score for a in self._population if np.isfinite(a.score)]
+            if not valid_scores:
+                return -float("inf")
+            return max(valid_scores)
 
     def to_dict(self) -> Dict[str, Any]:
         with self._lock:

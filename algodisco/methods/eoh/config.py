@@ -3,7 +3,7 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, List
+from typing import Literal, Optional, List
 from algodisco.base.search_method import SearchConfigBase
 
 
@@ -35,7 +35,7 @@ class EoHConfig(SearchConfigBase):
     max_samples: Optional[int] = field(default=1000, kw_only=True)
 
     # Population parameters
-    pop_size: int = 10
+    pop_size: int | Literal["auto"] = "auto"
     selection_num: int = 2
 
     # Operator flags
@@ -63,3 +63,14 @@ class EoHConfig(SearchConfigBase):
             "response_text",
         ]
     )
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.pop_size == "auto":
+            if self.max_samples is None:
+                self.pop_size = 10
+                return
+            pop_size = self.max_samples // 100
+            pop_size = max(5, pop_size)
+            pop_size = min(64, pop_size)
+            self.pop_size = pop_size

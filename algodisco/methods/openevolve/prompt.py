@@ -812,9 +812,6 @@ class PromptConstructor:
         if system_message in self.template_manager.templates:
             system_message = self.template_manager.get_template(system_message)
 
-        print(user_msg)
-        input()
-
         return {"system": system_message, "user": user_msg}
 
     def extract_code(self, response: str, original_code: str) -> Optional[str]:

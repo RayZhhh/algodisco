@@ -3,6 +3,7 @@
 
 import copy
 import logging
+import math
 import random
 import threading
 import time
@@ -73,6 +74,14 @@ class EoHSearch(IterativeSearchBase):
         # When True and debug_mode is True, exit immediately on error
         self.debug_mode_crash = False
 
+    def _has_valid_score(self, score) -> bool:
+        if score is None:
+            return False
+        try:
+            return math.isfinite(score)
+        except (TypeError, ValueError):
+            return False
+
     def _save_database(self, sample_num: int):
         """Saves the current state of the database using the logger."""
         if not self._logger:
@@ -107,7 +116,7 @@ class EoHSearch(IterativeSearchBase):
         with Timer(template_proto, "eval_time"):
             results = self._evaluator.evaluate_program(template_proto.program)
 
-        if results is None or results.get("score") is None:
+        if results is None or not self._has_valid_score(results.get("score")):
             # EoH template might fail, but we usually want a baseline.
             # We'll register it if it works, otherwise we rely on i1.
             logging.warning("Template program failed evaluation.")
@@ -366,7 +375,7 @@ class EoHSearch(IterativeSearchBase):
 
             self._samples_count += 1
 
-            if algo_proto.score is not None:
+            if self._has_valid_score(algo_proto.score):
                 self._database.register_algo(algo_proto)
 
             self._log(algo_proto)
