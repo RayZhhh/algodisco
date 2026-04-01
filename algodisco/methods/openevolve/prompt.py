@@ -20,28 +20,8 @@ _BASE_SYSTEM_PROMPT = """You are an expert software developer tasked with iterat
 Your goal is to maximize the FITNESS SCORE while exploring diverse solutions across feature dimensions.
 The system maintains a collection of diverse programs - both high fitness AND diversity are valuable."""
 
-# User prompt used when the search expects targeted SEARCH/REPLACE edits.
-_DIFF_USER_FRAMEWORK = """{task_description_block}# Current Program Information
-- Fitness: {fitness_score}
-- Feature coordinates: {feature_coords}
-- Focus areas: {improvement_areas}
-
-{artifacts}
-
-# Program Evolution History
-{evolution_history}
-
-# Current Program
-```{language}
-{current_program}
-```
-
-# Task
-Suggest improvements to the program that will improve its FITNESS SCORE.
-The system maintains diversity across these dimensions: {feature_dimensions}
-Different solutions with similar fitness but different features are valuable.
-
-You MUST use the exact SEARCH/REPLACE diff format shown below to indicate changes:
+# Output instructions injected into the user prompt based on the configured mode.
+_DIFF_OUTPUT_INSTRUCTIONS = """You MUST use the exact SEARCH/REPLACE diff format shown below to indicate changes:
 
 <<<<<<< SEARCH
 # Original code to find and replace (must match exactly)
@@ -66,7 +46,68 @@ for i in range(m):
 You can suggest multiple changes. Each SEARCH section must exactly match code in the current program.
 Be thoughtful about your changes and explain your reasoning thoroughly.
 
-IMPORTANT: Do not rewrite the entire program - focus on targeted improvements."""
+IMPORTANT: Do not rewrite the entire program. Focus on targeted improvements."""
+
+_DIFF_OUTPUT_INSTRUCTIONS_WITH_IDEA = """Return your answer in exactly the following format:
+
+### Idea
+<brief algorithm idea>
+
+### Code
+<<<<<<< SEARCH
+# Original code to find and replace (must match exactly)
+=======
+# New replacement code
+>>>>>>> REPLACE
+
+You can include multiple SEARCH/REPLACE blocks inside the Code section.
+Each SEARCH section must exactly match code in the current program.
+Do not wrap the diff in a markdown code fence.
+Do not output anything before or after these two sections."""
+
+_REWRITE_OUTPUT_INSTRUCTIONS = """Rewrite the full program and return the complete new code.
+
+IMPORTANT: Make sure your rewritten program maintains the same inputs and outputs
+as the original program, but with improved internal implementation.
+
+```{language}
+# Your rewritten program here
+```"""
+
+_REWRITE_OUTPUT_INSTRUCTIONS_WITH_IDEA = """Return your answer in exactly the following format:
+
+### Idea
+<brief algorithm idea>
+
+### Code
+```{language}
+# Your rewritten program here
+```
+
+Do not output anything before or after these two sections."""
+
+# User prompt used when the search expects targeted SEARCH/REPLACE edits.
+_DIFF_USER_FRAMEWORK = """{task_description_block}# Current Program Information
+- Fitness: {fitness_score}
+- Feature coordinates: {feature_coords}
+- Focus areas: {improvement_areas}
+
+{artifacts}
+
+# Program Evolution History
+{evolution_history}
+
+# Current Program
+```{language}
+{current_program}
+```
+
+# Task
+Suggest improvements to the program that will improve its FITNESS SCORE.
+The system maintains diversity across these dimensions: {feature_dimensions}
+Different solutions with similar fitness but different features are valuable.
+
+{output_instructions}"""
 
 # User prompt used when the search expects a full program rewrite.
 _REWRITE_USER_FRAMEWORK = """{task_description_block}# Current Program Information
@@ -88,14 +129,8 @@ _REWRITE_USER_FRAMEWORK = """{task_description_block}# Current Program Informati
 Rewrite the program to improve its FITNESS SCORE.
 The system maintains diversity across these dimensions: {feature_dimensions}
 Different solutions with similar fitness but different features are valuable.
-Provide the complete new program code.
 
-IMPORTANT: Make sure your rewritten program maintains the same inputs and outputs
-as the original program, but with improved internal implementation.
-
-```{language}
-# Your rewritten program here
-```"""
+{output_instructions}"""
 
 # Shared history block injected into both prompt modes.
 _HISTORY_SECTION = """## Previous Attempts
@@ -216,6 +251,53 @@ class PromptConstructor:
         self.config = config
         # Templates can be overridden from disk without changing search code.
         self.template_manager = TemplateManager(config.template_dir)
+
+    def _build_output_instructions(self, language: str) -> str:
+        """Select the response protocol expected from the model."""
+        if self.config.diff_based_evolution:
+            template = (
+                _DIFF_OUTPUT_INSTRUCTIONS_WITH_IDEA
+                if self.config.idea_prompt
+                else _DIFF_OUTPUT_INSTRUCTIONS
+            )
+        else:
+            template = (
+                _REWRITE_OUTPUT_INSTRUCTIONS_WITH_IDEA
+                if self.config.idea_prompt
+                else _REWRITE_OUTPUT_INSTRUCTIONS
+            )
+        return template.format(language=language)
+
+    def _extract_labeled_section(self, response: str, label: str) -> Optional[str]:
+        """Extract a markdown section like `### Idea` or `### Code`."""
+        if not response:
+            return None
+
+        pattern = rf"(?ms)^\s*###\s*{re.escape(label)}\s*$\n(.*?)(?=^\s*###\s+\S|\Z)"
+        match = re.search(pattern, response)
+        if not match:
+            return None
+
+        section = match.group(1).strip()
+        return section or None
+
+    def extract_idea(self, response: str) -> Optional[str]:
+        """Extract the Idea section when idea prompting is enabled."""
+        if not self.config.idea_prompt:
+            return None
+        return self._extract_labeled_section(response, "Idea")
+
+    def _extract_code_payload(self, response: str) -> str:
+        """Extract the payload that should be parsed as code or diff content."""
+        if not response:
+            return ""
+
+        if self.config.idea_prompt:
+            code_section = self._extract_labeled_section(response, "Code")
+            if code_section:
+                return code_section
+
+        return response
 
     def _format_metrics(self, metrics: Any) -> str:
         """Render metrics as a multi-line block for prompt sections."""
@@ -696,6 +778,8 @@ class PromptConstructor:
         if not self.config.diff_based_evolution:
             return "Full rewrite"
 
+        response = self._extract_code_payload(response)
+
         # Collapse multi-hunk diffs into a compact summary so later prompts can
         # reference recent edits without carrying full patch text around.
         diff_pattern = r"<<<<<<< SEARCH\n(.*?)=======\n(.*?)>>>>>>> REPLACE"
@@ -806,6 +890,7 @@ class PromptConstructor:
             evolution_history=history_section,
             current_program=parent.program,
             language=language,
+            output_instructions=self._build_output_instructions(language),
         )
 
         system_message = self.config.system_message
@@ -824,6 +909,8 @@ class PromptConstructor:
         """
         if not response:
             return None
+
+        response = self._extract_code_payload(response)
 
         # Logic for Diff-based evolution
         if self.config.diff_based_evolution:

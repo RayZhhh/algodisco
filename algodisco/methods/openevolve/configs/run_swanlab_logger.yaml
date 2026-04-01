@@ -2,6 +2,7 @@ method:
   template_program_path: "path/to/template.py"
   task_description_path: "path/to/task_description.txt"
   language: "python"
+  idea_prompt: false
   diff_based_evolution: false
   num_top_programs: 1
   num_diverse_programs: 1
@@ -41,7 +42,7 @@ method:
   population_size: null
   migration_interval: 50
   migration_rate: 0.1
-  keep_metadata_keys: ["sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
+  keep_metadata_keys: ["idea", "sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
   debug_mode: false
   debug_mode_crash: false
 

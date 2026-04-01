@@ -414,6 +414,10 @@ class OpenEvolve(IterativeSearchBase):
         parent_code = parents[0].program if parents else ""
 
         # Use the improved parser from PromptConstructor
+        idea_text = self._prompt_constructor.extract_idea(response_text)
+        if idea_text:
+            candidate["idea"] = idea_text
+
         new_code_str = self._prompt_constructor.extract_code(
             response_text, original_code=parent_code
         )

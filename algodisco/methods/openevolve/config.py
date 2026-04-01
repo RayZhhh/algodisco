@@ -14,6 +14,7 @@ class OpenEvolveConfig(SearchConfigBase):
         template_program: Template program source code used to seed the search.
         task_description: Natural-language task description injected into prompts.
         max_samples: Maximum number of candidates to sample before stopping.
+        idea_prompt: Whether to require an explicit idea section before code output.
         diff_based_evolution: Whether to evolve with SEARCH/REPLACE diffs instead of full rewrites.
         num_top_programs: Number of top-performing programs included in prompt context.
         num_diverse_programs: Number of diverse cross-island programs included in prompt context.
@@ -55,6 +56,7 @@ class OpenEvolveConfig(SearchConfigBase):
     template_program: str
     task_description: str = ""
     max_samples: Optional[int] = field(default=1000, kw_only=True)
+    idea_prompt: bool = False
 
     # Evolution Mode
     diff_based_evolution: bool = False  # True: use SEARCH/REPLACE diffs, False: use Full Rewrite
@@ -108,6 +110,7 @@ class OpenEvolveConfig(SearchConfigBase):
     # Metadata keys to keep when saving
     keep_metadata_keys: List[str] = field(
         default_factory=lambda: [
+            "idea",
             "sample_time",
             "eval_time",
             "execution_time",
