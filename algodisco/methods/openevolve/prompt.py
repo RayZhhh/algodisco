@@ -331,6 +331,32 @@ class PromptConstructor:
             return program.get("program", "")
         return ""
 
+    def _get_program_id(self, program: Any) -> Optional[str]:
+        """Return the stable id used to deduplicate prompt context entries."""
+        if isinstance(program, AlgoProto):
+            return program.algo_id
+        if isinstance(program, dict):
+            algo_id = program.get("algo_id")
+            return algo_id if isinstance(algo_id, str) and algo_id else None
+        return None
+
+    def _dedupe_programs(
+        self,
+        programs: List[Any],
+        exclude_ids: Optional[set[str]] = None,
+    ) -> List[Any]:
+        """Preserve order while removing duplicate prompt-context programs."""
+        seen_ids = set(exclude_ids or set())
+        unique_programs = []
+        for program in programs:
+            program_id = self._get_program_id(program)
+            if program_id and program_id in seen_ids:
+                continue
+            if program_id:
+                seen_ids.add(program_id)
+            unique_programs.append(program)
+        return unique_programs
+
     def _format_metrics_inline(self, metrics: Dict[str, Any]) -> str:
         """Render metrics as a compact comma-separated summary."""
         if not metrics:
@@ -347,11 +373,17 @@ class PromptConstructor:
                 parts.append(f"{name}: {value}")
         return ", ".join(parts)
 
-    def _get_fitness(self, program: Any) -> float:
+    def _format_optional_score(self, value: Optional[float]) -> str:
+        """Render scores consistently when the evaluator produced no valid score."""
+        if value is None:
+            return "None"
+        return f"{value:.4f}"
+
+    def _get_fitness(self, program: Any) -> Optional[float]:
         metrics = self._get_program_value(program, "metrics", {}) or {}
         if metrics:
-            # Prompt ranking should use the same aggregate fitness that drives
-            # archive/selection decisions, not only the raw evaluator score.
+            # Prompt ranking should use the same score-backed fitness that
+            # drives archive and selection decisions.
             return get_fitness_score(metrics, self.config.feature_dimensions)
 
         if isinstance(program, AlgoProto):
@@ -361,17 +393,17 @@ class PromptConstructor:
         else:
             score = None
         if score is None:
-            return 0.0
+            return None
 
         try:
             return float(score)
         except (TypeError, ValueError):
-            return 0.0
+            return None
 
     def _get_program_type(self, program: Any) -> str:
         """Assign a lightweight label used in inspiration sections."""
         # Explicit metadata tags win first because they usually encode search
-        # intent more directly than the scalar fitness value.
+        # intent more directly than the scalar score.
         if self._get_program_value(program, "diverse"):
             return self.template_manager.get_fragment("inspiration_type_diverse")
         if self._get_program_value(program, "migrant"):
@@ -380,6 +412,10 @@ class PromptConstructor:
             return self.template_manager.get_fragment("inspiration_type_random")
 
         score = self._get_fitness(program)
+        if score is None:
+            return self.template_manager.get_fragment(
+                "inspiration_type_score_exploratory"
+            )
         if score >= 0.8:
             return self.template_manager.get_fragment(
                 "inspiration_type_score_high_performer"
@@ -525,7 +561,7 @@ class PromptConstructor:
         areas = []
 
         # Surface execution failures directly in the prompt so the model can
-        # repair them before optimizing for fitness again.
+        # repair them before optimizing for score again.
         error_info = self._get_program_value(parent, "error_msg") or metrics.get(
             "error"
         )
@@ -542,7 +578,9 @@ class PromptConstructor:
             previous_fitness = get_fitness_score(
                 previous_metrics, self.config.feature_dimensions
             )
-            if current_fitness > previous_fitness:
+            if current_fitness is None or previous_fitness is None:
+                areas.append("The previous attempt did not produce a valid score.")
+            elif current_fitness > previous_fitness:
                 areas.append(
                     self.template_manager.get_fragment(
                         "fitness_improved",
@@ -649,19 +687,58 @@ class PromptConstructor:
         return "\n\n".join(blocks)
 
     def _format_top_programs(self, programs: List[Any], language: str) -> str:
-        """Render the highest-fitness reference programs for the prompt."""
+        """Render top programs plus a sampled diverse slice, matching temp behavior."""
         template = self.template_manager.get_template("top_program")
         blocks = []
-        for i, program in enumerate(programs[: self.config.num_top_programs]):
+
+        selected_top = programs[: self.config.num_top_programs]
+        for i, program in enumerate(selected_top):
             blocks.append(
                 template.format(
                     program_number=i + 1,
-                    score=f"{self._get_fitness(program):.4f}",
+                    score=self._format_optional_score(self._get_fitness(program)),
                     language=language,
                     program_snippet=self._get_program_code(program),
                     key_features=self._get_feature_summary(program),
                 )
             )
+
+        if (
+            self.config.num_diverse_programs > 0
+            and len(programs) > self.config.num_top_programs
+        ):
+            remaining_programs = programs[self.config.num_top_programs :]
+            num_diverse = min(self.config.num_diverse_programs, len(remaining_programs))
+            if num_diverse > 0:
+                diverse_programs = random.sample(remaining_programs, num_diverse)
+                blocks.append(
+                    "## "
+                    + self.template_manager.get_fragment("diverse_programs_title")
+                )
+                for i, program in enumerate(diverse_programs):
+                    metric_names = list(
+                        (self._get_program_value(program, "metrics", {}) or {}).keys()
+                    )[:2]
+                    key_features = (
+                        ", ".join(
+                            f"{self.template_manager.get_fragment('top_program_metrics_prefix')} {name}"
+                            for name in metric_names
+                        )
+                        if metric_names
+                        else self._get_feature_summary(program)
+                    )
+                    blocks.append(
+                        template.format(
+                            program_number=f"D{i + 1}",
+                            score=self._format_optional_score(
+                                self._get_fitness(program)
+                            ),
+                            language=language,
+                            program_snippet=self._get_program_code(program),
+                            key_features=key_features,
+                        )
+                    )
+
         return "\n\n".join(blocks)
 
     def _format_inspirations_section(self, programs: List[Any], language: str) -> str:
@@ -678,7 +755,7 @@ class PromptConstructor:
             blocks.append(
                 program_template.format(
                     program_number=i + 1,
-                    score=f"{self._get_fitness(program):.4f}",
+                    score=self._format_optional_score(self._get_fitness(program)),
                     program_type=self._get_program_type(program),
                     language=language,
                     program_snippet=self._get_program_code(program),
@@ -843,6 +920,14 @@ class PromptConstructor:
             lineage = self._get_program_value(parent, "parents", [])
             previous_programs = lineage[:3] if lineage else []
 
+        top_programs = self._dedupe_programs(top_programs)
+        top_program_ids = {
+            program_id
+            for program_id in (self._get_program_id(program) for program in top_programs)
+            if program_id
+        }
+        inspirations = self._dedupe_programs(inspirations, exclude_ids=top_program_ids)
+
         previous_attempts_str = self._format_previous_attempts(
             previous_programs,
             self._get_program_value(parent, "parent_metrics", {}) or {},
@@ -882,7 +967,7 @@ class PromptConstructor:
         # the current LLM interface accepts a single prompt string.
         user_msg = framework.format(
             task_description_block=task_desc_block,
-            fitness_score=f"{fitness_score:.4f}",
+            fitness_score=self._format_optional_score(fitness_score),
             feature_coords=feature_coords_str,
             feature_dimensions=", ".join(feature_dimensions),
             improvement_areas=improvement_areas,

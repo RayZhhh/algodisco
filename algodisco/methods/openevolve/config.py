@@ -17,7 +17,7 @@ class OpenEvolveConfig(SearchConfigBase):
         idea_prompt: Whether to require an explicit idea section before code output.
         diff_based_evolution: Whether to evolve with SEARCH/REPLACE diffs instead of full rewrites.
         num_top_programs: Number of top-performing programs included in prompt context.
-        num_diverse_programs: Number of diverse cross-island programs included in prompt context.
+        num_diverse_programs: Number of inspiration/diverse programs included in prompt context.
         include_artifacts: Whether execution logs and errors are included in prompts.
         template_dir: Optional directory containing prompt template files.
         system_message: Template key or identifier for the main sampler system prompt.
@@ -63,7 +63,7 @@ class OpenEvolveConfig(SearchConfigBase):
 
     # Context Control (Prompt context)
     num_top_programs: int = 1           # Number of top-performing programs to include in prompt
-    num_diverse_programs: int = 1       # Number of diverse programs (from other islands)
+    num_diverse_programs: int = 1       # Number of inspiration/diverse programs to include in prompt
     include_artifacts: bool = False     # Whether to include execution logs/errors in the prompt
     template_dir: Optional[str] = None
     system_message: str = "system_message"

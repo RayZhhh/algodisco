@@ -233,3 +233,5 @@ CLAUDE.md
 FunSearch-AdmissibleSet-run1
 algodisco/methods/funsearch_behavesim/
 algodisco/methods/algobleu_search/
+**/tests
+**/test

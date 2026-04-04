@@ -132,6 +132,10 @@ class OpenEvolve(IterativeSearchBase):
 
         # handle results dict or object
         if isinstance(results, dict):
+            if "execution_time" in results:
+                template_proto["execution_time"] = results["execution_time"]
+            if "error_msg" in results:
+                template_proto["error_msg"] = results["error_msg"]
             template_proto["metrics"] = results
             template_proto["evaluator_score"] = results.get("score")
             template_proto["fitness_score"] = get_fitness_score(
@@ -142,6 +146,11 @@ class OpenEvolve(IterativeSearchBase):
             template_proto.score = results
             template_proto["metrics"] = {"score": results}
             template_proto["fitness_score"] = results
+
+        if not self._database.is_searchable_program(template_proto):
+            raise RuntimeError(
+                "The template program did not produce a valid score."
+            )
 
         # Register the template before logging so the logger can include island
         # state derived from the database snapshot.
@@ -374,7 +383,7 @@ class OpenEvolve(IterativeSearchBase):
             island_id=context_island,
         )
         top_programs = self._database.get_top_programs(
-            self._config.num_top_programs,
+            self._config.num_top_programs + self._config.num_diverse_programs,
             island_id=context_island,
         )
 
@@ -462,7 +471,7 @@ class OpenEvolve(IterativeSearchBase):
             - error_msg: str, error message if evaluation failed
             - metrics: dict, full evaluation results
             - evaluator_score: float, raw score from evaluator
-            - fitness_score: float, computed fitness based on feature dimensions
+            - fitness_score: float, fitness mirrored from evaluator ``score``
             - score: float, the evaluated score
             - eval_time: float, total evaluation time (via Timer)
             - parent_metrics: dict, metrics from the parent (reassigned after collapse)
@@ -494,8 +503,8 @@ class OpenEvolve(IterativeSearchBase):
                 candidate["fitness_score"] = get_fitness_score(
                     results, self._config.feature_dimensions
                 )
-                # Preserve the evaluator's raw score separately from the search
-                # fitness so logs and downstream consumers can inspect both.
+                # Preserve both names even though OpenEvolve currently treats
+                # fitness as the evaluator score.
                 candidate.score = results.get("score")
             else:
                 candidate.score = results
@@ -595,7 +604,7 @@ class OpenEvolve(IterativeSearchBase):
 
             self._samples_count += 1
 
-            if algo_proto.get("metrics") or algo_proto.score is not None:
+            if self._database.is_searchable_program(algo_proto):
                 self._database.register_program(algo_proto, island_id=island_id)
                 if island_id >= 0:
                     self._database.increment_island_generation(island_id)

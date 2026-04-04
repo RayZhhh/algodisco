@@ -16,72 +16,35 @@ from algodisco.methods.openevolve.config import OpenEvolveConfig
 logger = logging.getLogger(__name__)
 
 
-def safe_numeric_average(metrics: Dict[str, Any]) -> float:
-    """Average numeric metric values while ignoring strings, bools, and NaNs."""
-    if not metrics:
-        return 0.0
+def _coerce_finite_numeric(value: Any) -> Optional[float]:
+    """Return a finite float or ``None`` when the value is missing/invalid."""
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return None
 
-    numeric_values = []
-    for value in metrics.values():
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            try:
-                float_val = float(value)
-            except (TypeError, ValueError, OverflowError):
-                continue
+    try:
+        numeric_value = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
 
-            if float_val == float_val:
-                numeric_values.append(float_val)
-
-    if not numeric_values:
-        return 0.0
-
-    return sum(numeric_values) / len(numeric_values)
+    if numeric_value != numeric_value or numeric_value in (float("inf"), float("-inf")):
+        return None
+    return numeric_value
 
 
 def get_fitness_score(
-    metrics: Dict[str, Any], feature_dimensions: Optional[List[str]] = None
-) -> float:
+    metrics: Dict[str, Any],
+    feature_dimensions: Optional[List[str]] = None,
+) -> Optional[float]:
     """
-    Compute the program fitness used for ranking and archive selection.
+    Compute the program score used for ranking and archive selection.
 
-    The aggregation rule is intentionally simple:
-    - prefer `combined_score` when the evaluator provides one
-    - otherwise average numeric metrics that are not being used as features
-    - finally fall back to the average of all numeric metrics
+    OpenEvolve aligns its fitness with the evaluator's canonical ``score``.
+    Runtime and diagnostic fields are excluded even when they are numeric.
     """
+    del feature_dimensions  # Kept for backward-compatible call sites.
     if not metrics:
-        return 0.0
-
-    # Allow evaluators to expose one explicit optimization target.
-    if "combined_score" in metrics:
-        try:
-            return float(metrics["combined_score"])
-        except (TypeError, ValueError, OverflowError):
-            pass
-
-    feature_dimensions = feature_dimensions or []
-    filtered_metrics: Dict[str, float] = {}
-
-    for key, value in metrics.items():
-        # Feature dimensions are excluded here so search pressure is not doubled
-        # by also injecting the same quantities into the fitness aggregate.
-        if key in feature_dimensions:
-            continue
-        if not isinstance(value, (int, float)) or isinstance(value, bool):
-            continue
-
-        try:
-            float_val = float(value)
-        except (TypeError, ValueError, OverflowError):
-            continue
-
-        if float_val == float_val:
-            filtered_metrics[key] = float_val
-
-    if filtered_metrics:
-        return safe_numeric_average(filtered_metrics)
-
-    return safe_numeric_average(metrics)
+        return None
+    return _coerce_finite_numeric(metrics.get("score"))
 
 
 class ProgramDatabase:
@@ -143,6 +106,13 @@ class ProgramDatabase:
         existing MAP-Elites occupant when it is better for the same feature cell.
         """
         with self._lock:
+            if not self.is_searchable_program(program):
+                logger.debug(
+                    "Skipping registration for program %s because it has no valid score.",
+                    program.algo_id,
+                )
+                return
+
             # `parents` is only needed while generating and evaluating a child.
             # Once the program is entering the database, collapse that linkage
             # into a few scalar metadata fields and drop the recursive objects.
@@ -182,7 +152,7 @@ class ProgramDatabase:
             should_replace = existing_id is None
 
             if existing_id is not None and existing_id in self.programs:
-                # Replacement is based on fitness, not raw evaluator score.
+                # Replacement is based on the score-backed fitness value.
                 should_replace = self._is_better(program, self.programs[existing_id])
 
             if should_replace:
@@ -226,7 +196,10 @@ class ProgramDatabase:
         """
         with self._lock:
             island_id %= len(self.islands)
-            if not any(pid in self.programs for pid in self.islands[island_id]):
+            if not any(
+                pid in self.programs and self.is_searchable_program(self.programs[pid])
+                for pid in self.islands[island_id]
+            ):
                 parent, inspirations = self._sample_global(num_inspirations)
                 return parent, inspirations, island_id
 
@@ -254,6 +227,7 @@ class ProgramDatabase:
                 self.programs[pid]
                 for pid in self.islands[island_id]
                 if pid in self.programs
+                and self.is_searchable_program(self.programs[pid])
             ]
             if not island_programs:
                 best = self.get_best_program()
@@ -268,16 +242,21 @@ class ProgramDatabase:
     def get_top_programs(
         self, num_programs: int, island_id: Optional[int] = None
     ) -> List[AlgoProto]:
-        """Return the highest-fitness programs globally or within one island."""
+        """Return the highest-score programs globally or within one island."""
         with self._lock:
             if island_id is None:
-                candidates = list(self.programs.values())
+                candidates = [
+                    program
+                    for program in self.programs.values()
+                    if self.is_searchable_program(program)
+                ]
             else:
                 island_id %= len(self.islands)
                 candidates = [
                     self.programs[pid]
                     for pid in self.islands[island_id]
                     if pid in self.programs
+                    and self.is_searchable_program(self.programs[pid])
                 ]
 
             candidates.sort(key=self._get_score, reverse=True)
@@ -299,6 +278,7 @@ class ProgramDatabase:
                     self.programs[pid]
                     for pid in self.islands[island_id]
                     if pid in self.programs
+                    and self.is_searchable_program(self.programs[pid])
                 ]
                 if not island_programs:
                     continue
@@ -341,7 +321,10 @@ class ProgramDatabase:
     def get_best_program(self) -> Optional[AlgoProto]:
         """Return the current global best program, if one exists."""
         with self._lock:
-            return self.programs.get(self.best_program_id)
+            best = self.programs.get(self.best_program_id)
+            if best is not None and self.is_searchable_program(best):
+                return best
+            return None
 
     def get_island_stats(self) -> Dict[int, int]:
         """Return the current population size for each island."""
@@ -365,6 +348,10 @@ class ProgramDatabase:
         with self._lock:
             island_id %= len(self.island_generations)
             self.island_generations[island_id] += 1
+
+    def is_searchable_program(self, program: Any) -> bool:
+        """Return whether a program has a valid evaluator score for search."""
+        return self._resolve_program_fitness(program) is not None
 
     def should_migrate(self) -> bool:
         """Check whether enough registrations happened since the last migration."""
@@ -444,6 +431,7 @@ class ProgramDatabase:
             self.programs[pid]
             for pid in self.islands[island_id]
             if pid in self.programs
+            and self.is_searchable_program(self.programs[pid])
         ]
 
         if not island_programs:
@@ -453,7 +441,7 @@ class ProgramDatabase:
         exploration_ratio = getattr(self.config, "exploration_ratio", 0.2)
         exploitation_ratio = getattr(self.config, "exploitation_ratio", 0.7)
 
-        # Random exploration gives low-fitness or newly arrived programs a chance
+        # Random exploration gives low-score or newly arrived programs a chance
         # to reproduce before exploitation dominates the island.
         if r < exploration_ratio:
             return random.choice(island_programs)
@@ -465,13 +453,17 @@ class ProgramDatabase:
                 self.programs[pid]
                 for pid in self.archive
                 if pid in self.programs
+                and self.is_searchable_program(self.programs[pid])
                 and self.programs[pid].get("island_id") == island_id
             ]
             if archive_in_island:
                 return random.choice(archive_in_island)
 
             valid_archive = [
-                self.programs[pid] for pid in self.archive if pid in self.programs
+                self.programs[pid]
+                for pid in self.archive
+                if pid in self.programs
+                and self.is_searchable_program(self.programs[pid])
             ]
             if valid_archive:
                 return random.choice(valid_archive)
@@ -480,7 +472,7 @@ class ProgramDatabase:
             return island_programs[0]
 
         # Weighted sampling is the fallback mode. Scores are floored at a tiny
-        # epsilon so non-positive fitness values still remain sampleable.
+        # epsilon so non-positive scores still remain sampleable.
         weights = [max(self._get_score(program), 1e-6) for program in island_programs]
         total_weight = sum(weights)
         if total_weight <= 0:
@@ -524,7 +516,11 @@ class ProgramDatabase:
 
     def _sample_parent_global(self) -> AlgoProto:
         """Sample a parent from the full population using the same policy mix."""
-        all_programs = list(self.programs.values())
+        all_programs = [
+            program
+            for program in self.programs.values()
+            if self.is_searchable_program(program)
+        ]
         if not all_programs:
             raise ValueError("No programs available for sampling")
 
@@ -537,7 +533,10 @@ class ProgramDatabase:
 
         if r < exploration_ratio + exploitation_ratio:
             valid_archive = [
-                self.programs[pid] for pid in self.archive if pid in self.programs
+                self.programs[pid]
+                for pid in self.archive
+                if pid in self.programs
+                and self.is_searchable_program(self.programs[pid])
             ]
             if valid_archive:
                 return random.choice(valid_archive)
@@ -591,6 +590,7 @@ class ProgramDatabase:
             self.programs[pid]
             for pid in self.islands[island_id]
             if pid in self.programs
+            and self.is_searchable_program(self.programs[pid])
         ]
         if not island_programs:
             return inspirations
@@ -830,7 +830,7 @@ class ProgramDatabase:
         self.diversity_reference_set = [p.program for p in selected]
 
     def _is_better(self, program1: AlgoProto, program2: AlgoProto) -> bool:
-        """Compare two programs using the internal fitness metric."""
+        """Compare two programs using the evaluator-score fitness."""
         return self._get_score(program1) > self._get_score(program2)
 
     def _update_archive(self, program: AlgoProto) -> None:
@@ -843,7 +843,9 @@ class ProgramDatabase:
         # Clean up stale ids first because population pruning can remove archive
         # entries before the archive itself is refreshed.
         valid_archive_programs = [
-            self.programs[pid] for pid in self.archive if pid in self.programs
+            self.programs[pid]
+            for pid in self.archive
+            if pid in self.programs and self.is_searchable_program(self.programs[pid])
         ]
         stale_ids = [pid for pid in self.archive if pid not in self.programs]
         for stale_id in stale_ids:
@@ -865,6 +867,9 @@ class ProgramDatabase:
 
     def _update_best_program(self, program: AlgoProto):
         """Refresh the global best pointer after registration."""
+        if not self.is_searchable_program(program):
+            return
+
         if self.best_program_id is None or self.best_program_id not in self.programs:
             self.best_program_id = program.algo_id
             return
@@ -875,6 +880,9 @@ class ProgramDatabase:
 
     def _update_island_best_program(self, program: AlgoProto, island_id: int):
         """Refresh the best-program pointer for one island."""
+        if not self.is_searchable_program(program):
+            return
+
         island_id %= len(self.island_best_programs)
         current_best_id = self.island_best_programs[island_id]
 
@@ -912,7 +920,7 @@ class ProgramDatabase:
                 break
             if program.algo_id in protected_ids:
                 continue
-            # Remove low-fitness programs first because all secondary indices can
+            # Remove low-score programs first because all secondary indices can
             # be rebuilt from the surviving population afterward.
             self._remove_program(program.algo_id)
             removed += 1
@@ -959,6 +967,7 @@ class ProgramDatabase:
                 self.programs[pid]
                 for pid in self.islands[island_id]
                 if pid in self.programs
+                and self.is_searchable_program(self.programs[pid])
             ]
             if island_programs:
                 self.island_best_programs[island_id] = max(
@@ -969,20 +978,17 @@ class ProgramDatabase:
                 self.island_best_programs[island_id] = None
 
     def _get_score(self, program: AlgoProto) -> float:
-        """Return the fitness value used by search and database bookkeeping."""
-        metrics = program.get("metrics", {}) or {}
+        """Return the evaluator-score fitness used by search and database bookkeeping."""
+        resolved_score = self._resolve_program_fitness(program)
+        return resolved_score if resolved_score is not None else -1e9
+
+    def _resolve_program_fitness(self, program: Any) -> Optional[float]:
+        """Resolve the score-backed fitness for a live or serialized program."""
+        metrics = self._get_program_field(program, "metrics", {}) or {}
         if metrics:
-            # Ranking/search decisions use the internal fitness aggregate rather
-            # than the raw evaluator score stored on program.score.
             return get_fitness_score(metrics, self.config.feature_dimensions)
 
-        if program.score is not None:
-            try:
-                return float(program.score)
-            except (TypeError, ValueError, OverflowError):
-                return -1e9
-
-        return -1e9
+        return _coerce_finite_numeric(self._get_program_field(program, "score"))
 
     def _coerce_numeric(self, value: Any) -> float:
         """Validate that a feature value is numeric and finite."""
