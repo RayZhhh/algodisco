@@ -1,0 +1,16 @@
+import math
+import numpy as np
+
+
+def priority(el: tuple[int, ...], n: int = 15, w: int = 10) -> float:
+    """Return the priority used to rank a candidate vector.
+
+    Args:
+        el: Candidate vector represented as a tuple in {0, 1, 2}^n.
+        n: Length of the vector.
+        w: Number of non-zero coordinates in the vector.
+
+    Returns:
+        A scalar score. Larger values mean the candidate is selected earlier.
+    """
+    return 0.0

@@ -1,0 +1,25 @@
+import numpy as np
+
+
+def choose_action(s: list, last_action: int, s_pre: list) -> int:
+    """Return the next Lunar Lander action."""
+    angle_targ = s[0] * 0.5 + s[2] * 1.0
+    angle_targ = np.clip(angle_targ, -0.4, 0.4)
+
+    hover_targ = 0.55 * np.abs(s[0])
+    angle_todo = (angle_targ - s[4]) * 0.5 - s[5] * 1.0
+    hover_todo = (hover_targ - s[1]) * 0.5 - s[3] * 0.5
+
+    # Once a leg touches the ground, prioritize reducing the vertical speed.
+    if s[6] or s[7]:
+        angle_todo = 0.0
+        hover_todo = -s[3] * 0.5
+
+    action = 0
+    if hover_todo > np.abs(angle_todo) and hover_todo > 0.05:
+        action = 2
+    elif angle_todo < -0.05:
+        action = 3
+    elif angle_todo > 0.05:
+        action = 1
+    return action

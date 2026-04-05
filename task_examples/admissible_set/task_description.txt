@@ -1,0 +1,12 @@
+Formally, admissible set problems, denoted as A(n, w), are collections of
+vectors in {0, 1, 2}^n that satisfy the following constraints:
+
+1. Each vector is unique and has exactly w non-zero coordinates.
+2. For any three distinct vectors, there exists a coordinate whose three values
+   are one of the following patterns: {0, 1, 2}, {0, 0, 1}, or {0, 0, 2}.
+
+The objective is to maximize the size of the admissible set while satisfying
+all constraints. In this task, use n = 15 and w = 10.
+
+Your job is to design a `priority` function that helps construct a large
+admissible set.

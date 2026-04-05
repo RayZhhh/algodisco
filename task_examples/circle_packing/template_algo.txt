@@ -1,0 +1,74 @@
+import numpy as np
+
+
+# EVOLVE-BLOCK-START
+def construct_packing():
+    """Construct one deterministic packing for 26 circles.
+
+    Returns:
+        A tuple ``(centers, radii, sum_radii)`` where:
+        - ``centers`` has shape ``(26, 2)``
+        - ``radii`` has shape ``(26,)``
+        - ``sum_radii`` is the sum of all radii
+    """
+    n = 26
+    centers = np.zeros((n, 2), dtype=float)
+
+    # Start from a simple hand-written layout.
+    centers[0] = [0.5, 0.5]
+
+    # Place 8 circles around the center.
+    for index in range(8):
+        angle = 2.0 * np.pi * index / 8.0
+        centers[index + 1] = [
+            0.5 + 0.3 * np.cos(angle),
+            0.5 + 0.3 * np.sin(angle),
+        ]
+
+    # Place the remaining 17 circles in an outer ring.
+    for index in range(17):
+        angle = 2.0 * np.pi * index / 17.0
+        centers[index + 9] = [
+            0.5 + 0.45 * np.cos(angle),
+            0.5 + 0.45 * np.sin(angle),
+        ]
+
+    # Keep all centers safely inside the unit square.
+    centers = np.clip(centers, 0.01, 0.99)
+
+    # Given the chosen centers, compute a conservative feasible radius for each
+    # circle so the initial template is always valid.
+    radii = compute_max_radii(centers)
+    sum_radii = float(np.sum(radii))
+    return centers, radii, sum_radii
+
+
+def compute_max_radii(centers):
+    """Compute a conservative valid radius for each center location."""
+    n = centers.shape[0]
+    radii = np.ones(n, dtype=float)
+
+    # First constrain each radius by the distance to the square boundary.
+    for index in range(n):
+        x_coord, y_coord = centers[index]
+        radii[index] = min(x_coord, y_coord, 1.0 - x_coord, 1.0 - y_coord)
+
+    # Then shrink pairs that would otherwise overlap. This is a simple
+    # sequential repair rule rather than an optimal radius assignment.
+    for i in range(n):
+        for j in range(i + 1, n):
+            distance = np.sqrt(np.sum((centers[i] - centers[j]) ** 2))
+            if radii[i] + radii[j] > distance:
+                scale = distance / (radii[i] + radii[j])
+                radii[i] *= scale
+                radii[j] *= scale
+
+    return radii
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_packing():
+    """Return the packing produced by ``construct_packing``."""
+    return construct_packing()

@@ -2,7 +2,7 @@
 # Licensed under the MIT license.
 
 from abc import ABC, abstractmethod
-from typing import Any, Generic, NotRequired, Optional, TypedDict, TypeVar
+from typing import Any, Generic, TypedDict, TypeVar
 
 
 class EvalResult(TypedDict):
@@ -11,11 +11,15 @@ class EvalResult(TypedDict):
     This only describes the minimum shared contract across evaluators.
     Method-specific evaluators can define a narrower TypedDict subclass when they
     need extra required keys such as ``behavior``.
+
+    By convention, evaluators should always include:
+    - ``execution_time``: defaults to ``0.0`` when unavailable
+    - ``error_msg``: defaults to ``""`` when there is no error
     """
 
     score: float
-    execution_time: NotRequired[Optional[float]]
-    error_msg: NotRequired[Optional[str]]
+    execution_time: float
+    error_msg: str
 
 
 TResult_co = TypeVar("TResult_co", bound=EvalResult, covariant=True)

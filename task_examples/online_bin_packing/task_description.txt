@@ -1,0 +1,17 @@
+Online bin packing receives items one by one and must place each item
+immediately, without revisiting earlier decisions.
+
+Design a `priority` function that scores every currently valid bin for the
+incoming item. The evaluator assigns the item to the valid bin with the highest
+priority score.
+
+Inputs:
+- `item`: the size of the arriving item.
+- `bins`: a NumPy array containing the remaining capacities of all bins that can
+  still fit the item.
+
+Output:
+- A NumPy array of priority scores with the same shape as `bins`.
+
+Goal:
+- Minimize the total number of bins used across the evaluation dataset.

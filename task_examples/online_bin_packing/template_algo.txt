@@ -1,0 +1,14 @@
+import numpy as np
+
+
+def priority(item: float, bins: np.ndarray) -> np.ndarray:
+    """Return a priority score for each currently valid bin.
+
+    Args:
+        item: Size of the arriving item.
+        bins: Remaining capacities of the bins that can still fit the item.
+
+    Returns:
+        One score per valid bin. Larger values mean the bin is preferred.
+    """
+    return -(bins - item)

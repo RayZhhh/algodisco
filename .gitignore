@@ -210,7 +210,7 @@ __marimo__/
 **/temp
 #**/fake_run
 **/_ignore
-**/admissible_set
+#**/admissible_set
 **/OpenEvolveSimple.md
 .DS_Store
 .idea/
@@ -228,10 +228,11 @@ _ignore/database_server.py
 _ignore/database_old.py
 **/funsearch_old
 **/ignore**
-main.py
+_ignore/main.py
 CLAUDE.md
 FunSearch-AdmissibleSet-run1
-algodisco/methods/funsearch_behavesim/
-algodisco/methods/algobleu_search/
+#algodisco/methods/funsearch_behavesim/
+#algodisco/methods/algobleu_search/
 **/tests
 **/test
+**/.claude

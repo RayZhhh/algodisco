@@ -82,16 +82,18 @@ evaluator:
 
 ## 装饰器
 
-algodisco 提供装饰器用于限制执行资源：
+algodisco 当前公开提供的装饰器是 `sandbox_run`，用于把评估逻辑放到沙箱进程中执行：
 
 ```python
-from algodisco.toolkit.sandbox.decorators import resource_limit, time_limit
+from algodisco.toolkit.decorators import sandbox_run
 
 
-@time_limit(5.0)  # 5秒超时
-@resource_limit(memory_mb=512)  # 512MB 内存限制
-def run_code(code: str):
-    exec(code)
+class MyEvaluator(Evaluator):
+    @sandbox_run(timeout=5.0, redirect_to_devnull=True)
+    def evaluate_program(self, program_str: str):
+        namespace = {}
+        exec(program_str, namespace)
+        return {"score": 1.0}
 ```
 
 ## 安全考虑

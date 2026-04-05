@@ -102,7 +102,7 @@ class MaxValueEvaluator(Evaluator):
 For safety, wrap your evaluation in the `sandbox_run` decorator:
 
 ```python
-from algodisco.toolkit.sandbox import sandbox_run
+from algodisco.toolkit.decorators import sandbox_run
 
 
 class MyEvaluator(Evaluator):
@@ -127,7 +127,7 @@ import os
 import pickle
 import numpy as np
 from algodisco.base.evaluator import Evaluator, EvalResult
-from algodisco.toolkit.sandbox import sandbox_run
+from algodisco.toolkit.decorators import sandbox_run
 
 
 class OnlineBinPackingEvaluator(Evaluator[EvalResult]):

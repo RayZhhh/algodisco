@@ -1,0 +1,37 @@
+Write a Python function that acts as a control policy for an agent in a
+top-down car racing environment.
+
+Environment overview:
+- The environment is a continuous-control racing task.
+- The goal is to cover as much of the track as possible before the step limit.
+- The policy controls steering, throttle, and brake.
+- The car is a strong rear-wheel-drive vehicle, so aggressive steering together
+  with acceleration can easily destabilize it.
+- Some visible track fragments may belong to later parts of the course rather
+  than the immediately drivable path, so the controller should not react to all
+  visible road pixels equally.
+- Coming to a full stop is usually harmful because it can prevent the car from
+  finishing the course efficiently.
+
+Observation details:
+- The observation is a 96x96x3 RGB image.
+- The car is red.
+- The track is gray.
+- Off-track grass is green.
+- Curbs in sharp turns are red and white.
+
+Inputs at each step:
+- `observation`: the current RGB observation with shape `(96, 96, 3)`.
+- `car_speed`: the current scalar speed of the car.
+- `pre_action`: the action used at the previous step.
+- `pre_observation`: the previous RGB observation.
+
+Output:
+- Return a NumPy array of shape `(3,)`:
+  - index 0: steering in `[-1, 1]`
+  - index 1: gas in `[0, 1]`
+  - index 2: brake in `[0, 1]`
+
+Goal:
+- Design a control policy that keeps the car on the track and maximizes track
+  completion.

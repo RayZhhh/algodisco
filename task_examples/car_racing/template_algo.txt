@@ -1,0 +1,42 @@
+import numpy as np
+
+
+def choose_action(observation, car_speed, pre_action, pre_observation):
+    """Return the next car control action."""
+    action = np.array([0.0, 0.0, 0.0])
+
+    # Detect the gray drivable track area using simple RGB thresholding.
+    gray_low = 95
+    gray_high = 115
+    gray_mask = (
+        (observation[:, :, 0] >= gray_low)
+        & (observation[:, :, 0] <= gray_high)
+        & (observation[:, :, 1] >= gray_low)
+        & (observation[:, :, 1] <= gray_high)
+        & (observation[:, :, 2] >= gray_low)
+        & (observation[:, :, 2] <= gray_high)
+    )
+
+    gray_indices = np.argwhere(gray_mask)
+    center_x = np.mean(gray_indices[:, 1]) if len(gray_indices) > 0 else observation.shape[1] // 2
+    car_position = observation.shape[1] // 2
+    offset = center_x - car_position
+
+    # Steer proportionally toward the estimated track center.
+    action[0] = np.clip(offset / 100.0, -1.0, 1.0)
+
+    # Slow down when the center estimate suggests a large steering correction.
+    if abs(offset) > 10:
+        action[1] = 0.0
+        action[2] = 0.2
+    else:
+        action[1] = 0.8
+        action[2] = 0.0
+
+    # If very little track is visible, reduce speed to recover stability.
+    gray_density = np.sum(gray_mask) / (observation.shape[0] * observation.shape[1])
+    if gray_density < 0.1:
+        action[1] = 0.4
+        action[2] = 0.3
+
+    return action

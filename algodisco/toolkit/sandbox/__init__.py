@@ -7,4 +7,3 @@ from algodisco.toolkit.sandbox.sandbox_executor import (
 )
 from algodisco.toolkit.sandbox.sandbox_executor_simple import SandboxExecutorSimple
 from algodisco.toolkit.sandbox.sandbox_executor_ray import SandboxExecutorRay
-from algodisco.toolkit.sandbox.decorators import sandbox_run

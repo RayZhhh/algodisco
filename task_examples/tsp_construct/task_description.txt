@@ -1,0 +1,19 @@
+Given a set of nodes with 2D coordinates, construct a Traveling Salesman tour
+that visits each node exactly once and returns to the starting node.
+
+The evaluator solves the problem step by step:
+- It starts from node `0`.
+- At each step it calls `select_next_node(...)`.
+- Your function must choose one node from `unvisited_nodes`.
+
+Inputs:
+- `current_node`: index of the current node
+- `destination_node`: index of the designated destination node
+- `unvisited_nodes`: NumPy array of currently unvisited node indices
+- `distance_matrix`: full pairwise distance matrix
+
+Output:
+- The index of the next node to visit
+
+Goal:
+- Minimize the average tour length across the bundled random instances.

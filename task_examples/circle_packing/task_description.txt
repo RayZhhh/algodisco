@@ -1,0 +1,21 @@
+Design a constructive algorithm for circle packing with exactly 26 circles
+inside the unit square.
+
+Your program must provide a function `run_packing()` that returns:
+- `centers`: a NumPy array of shape `(26, 2)` with circle centers
+- `radii`: a NumPy array of shape `(26,)` with non-negative radii
+- `sum_radii`: the sum of all radii
+
+Validity constraints:
+- Every circle must lie completely inside the unit square `[0, 1] x [0, 1]`
+- No two circles may overlap
+- All returned values must be finite
+
+Goal:
+- Maximize the sum of the 26 radii
+
+Evaluator behavior:
+- Invalid packings receive score `0.0`
+- Valid packings receive score equal to the actual sum of radii
+- The evaluator also returns `behavior`, which is the full list of circle
+  center coordinates

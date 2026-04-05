@@ -1,0 +1,34 @@
+Implement a heuristic action-selection function for the Lunar Lander control
+task.
+
+At each step, the function receives:
+- `s`: the current 8-dimensional state vector
+- `last_action`: the previous action
+- `s_pre`: the previous state vector observed before the previous action
+
+State vector meaning:
+- `s[0]`: horizontal position
+- `s[1]`: vertical position
+- `s[2]`: horizontal velocity
+- `s[3]`: vertical velocity
+- `s[4]`: angle
+- `s[5]`: angular velocity
+- `s[6]`: left leg contact flag
+- `s[7]`: right leg contact flag
+
+Action space:
+- `0`: do nothing
+- `1`: fire left orientation engine
+- `2`: fire main engine
+- `3`: fire right orientation engine
+
+Objective details:
+- The lander should approach the landing pad near the center.
+- A safe landing requires low vertical speed, low horizontal drift, near-upright
+  orientation, and stable angular velocity.
+- Contact by one or both legs is useful information and should influence the
+  control strategy near touchdown.
+
+Goal:
+- Achieve a safe landing with high reward, low fuel use, stable orientation,
+  and successful touchdown across multiple random seeds.

@@ -4,7 +4,7 @@ import pickle
 import numpy as np
 
 from algodisco.base.evaluator import Evaluator, EvalResult
-from algodisco.toolkit.sandbox import sandbox_run
+from algodisco.toolkit.decorators import sandbox_run
 
 # Get the directory where this file is located
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
