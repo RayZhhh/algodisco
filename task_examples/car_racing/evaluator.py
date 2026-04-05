@@ -60,7 +60,7 @@ def _extract_callable(program_globals: dict[str, Any], func_name: str) -> Any:
     return program_globals[func_name]
 
 
-class CarRacingEvaluator(Evaluator[EvalResult]):
+class CarRacingEvaluator(Evaluator):
     """Evaluate heuristic control policies for the Gymnasium CarRacing task."""
 
     def __init__(

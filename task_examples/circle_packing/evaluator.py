@@ -60,7 +60,7 @@ def validate_packing(centers: np.ndarray, radii: np.ndarray) -> bool:
     return True
 
 
-class CirclePackingEvaluator(Evaluator[EvalResult]):
+class CirclePackingEvaluator(Evaluator):
     """Evaluate constructive circle packings for 26 circles in the unit square."""
 
     def __init__(self, n_circles: int = 26, **kwargs):

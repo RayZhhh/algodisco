@@ -32,7 +32,7 @@ def online_binpack(
     return packing, bins
 
 
-class OnlineBinPackingEvaluator(Evaluator[EvalResult]):
+class OnlineBinPackingEvaluator(Evaluator):
     """Evaluator for Online Bin Packing problem."""
 
     def __init__(self, capacity=100, num_items=5000, **kwargs):

@@ -49,7 +49,7 @@ def online_binpack(
     return packing, bins
 
 
-class OnlineBinPackingEvaluator(Evaluator[EvalResult]):
+class OnlineBinPackingEvaluator(Evaluator):
     """Evaluate candidate priority functions for online bin packing."""
 
     def __init__(self, capacity=100, num_items=5000, **kwargs):
@@ -65,7 +65,7 @@ class OnlineBinPackingEvaluator(Evaluator[EvalResult]):
         return weibull_5k
 
     @sandbox_run(timeout=30, redirect_to_devnull=True)
-    def evaluate_program(self, program_str: str) -> EvalResult:
+    def evaluate_program(self, program_str: str):
         """Execute a candidate program and score mean bin usage."""
         g = {}
         exec(program_str, g)

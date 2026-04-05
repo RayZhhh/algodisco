@@ -37,7 +37,7 @@ class OpenEvolve(IterativeSearchBase):
     def __init__(
         self,
         config: OpenEvolveConfig,
-        evaluator: Evaluator[EvalResult],
+        evaluator: Evaluator,
         llm: LanguageModel = None,
         logger: Optional[AlgoSearchLoggerBase] = None,
         prompt_constructor: PromptConstructor = None,
@@ -54,7 +54,7 @@ class OpenEvolve(IterativeSearchBase):
             raise ValueError("The provided template program is empty.")
 
         self._llm = llm
-        self._evaluator: Evaluator[EvalResult] = evaluator
+        self._evaluator: Evaluator = evaluator
         self._database = ProgramDatabase(config)
         self._logger = logger
 

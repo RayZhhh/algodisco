@@ -26,7 +26,7 @@ from algodisco.common.logging_utils import format_time_info, format_error_box
 from algodisco.methods.funsearch_behavesim.database import AlgoDatabase
 from algodisco.methods.funsearch_behavesim.config import BehaveSimSearchConfig
 from algodisco.methods.funsearch_behavesim.prompt import PromptAdapter
-from algodisco.methods.funsearch_behavesim.evaluator import BehaviorEvalResult
+from algodisco.methods.funsearch_behavesim.evaluator import FunSearchBehaveSimEvaluator
 
 # Configure basic logging.
 logging.basicConfig(
@@ -40,7 +40,7 @@ class BehaveSimSearch(IterativeSearchBase):
     def __init__(
         self,
         config: BehaveSimSearchConfig,
-        evaluator: Evaluator[BehaviorEvalResult],
+        evaluator: FunSearchBehaveSimEvaluator,
         llm: LanguageModel = None,
         logger: Optional[AlgoSearchLoggerBase] = None,
         prompt_constructor: PromptAdapter = PromptAdapter(),
@@ -67,7 +67,7 @@ class BehaveSimSearch(IterativeSearchBase):
             raise ValueError("The provided template program is empty.")
 
         self._llm = llm
-        self._evaluator: Evaluator[BehaviorEvalResult] = evaluator
+        self._evaluator: FunSearchBehaveSimEvaluator = evaluator
         self._database = AlgoDatabase(
             sim_calculator=config.db_algo_sim_calculator,
             num_islands=config.db_num_islands,

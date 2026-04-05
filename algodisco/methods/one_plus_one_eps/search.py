@@ -36,7 +36,7 @@ class OnePlusOneEPS(IterativeSearchBase):
     def __init__(
         self,
         config: OnePlusOneEPSConfig,
-        evaluator: Evaluator[EvalResult],
+        evaluator: Evaluator,
         llm: LanguageModel = None,
         logger: Optional[AlgoSearchLoggerBase] = None,
         prompt_constructor: PromptAdapter = PromptAdapter(),
@@ -53,7 +53,7 @@ class OnePlusOneEPS(IterativeSearchBase):
             raise ValueError("The provided template program is empty.")
 
         self._llm = llm
-        self._evaluator: Evaluator[EvalResult] = evaluator
+        self._evaluator: Evaluator = evaluator
         self._logger = logger
         self._prompt_constructor = prompt_constructor
 

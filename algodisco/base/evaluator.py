@@ -2,39 +2,28 @@
 # Licensed under the MIT license.
 
 from abc import ABC, abstractmethod
-from typing import Any, Generic, TypedDict, TypeVar
+from typing import TypedDict
 
 
 class EvalResult(TypedDict):
     """The result of an evaluation.
 
-    This only describes the minimum shared contract across evaluators.
-    Method-specific evaluators can define a narrower TypedDict subclass when they
-    need extra required keys such as ``behavior``.
+    This shared result type is intentionally minimal. It only models the one
+    key that every evaluator must produce directly: ``score``.
 
-    By convention, evaluators should always include:
-    - ``execution_time``: defaults to ``0.0`` when unavailable
-    - ``error_msg``: defaults to ``""`` when there is no error
+    Evaluators can still return extra keys at runtime, and method-specific
+    evaluators can define ``TypedDict`` subclasses when they need typed fields
+    such as ``behavior``.
     """
 
     score: float
-    execution_time: float
-    error_msg: str
 
 
-TResult_co = TypeVar("TResult_co", bound=EvalResult, covariant=True)
-
-
-class Evaluator(ABC, Generic[TResult_co]):
-    """Base class for program evaluators.
-
-    The generic parameter captures the concrete evaluation result shape. Most
-    evaluators can return ``EvalResult`` directly. Evaluators with extra
-    required keys should return a TypedDict subclass of ``EvalResult``.
-    """
+class Evaluator(ABC):
+    """Base class for program evaluators."""
 
     @abstractmethod
-    def evaluate_program(self, program_str: str) -> TResult_co:
+    def evaluate_program(self, program_str: str) -> EvalResult:
         """Evaluate a given program.
 
         Args:

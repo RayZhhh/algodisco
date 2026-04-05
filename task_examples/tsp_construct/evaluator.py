@@ -26,7 +26,7 @@ def _extract_callable(program_globals: dict[str, Any], func_name: str) -> Any:
     return program_globals[func_name]
 
 
-class TSPConstructEvaluator(Evaluator[EvalResult]):
+class TSPConstructEvaluator(Evaluator):
     """Evaluate constructive heuristics for the Traveling Salesman Problem."""
 
     def __init__(
@@ -119,7 +119,7 @@ class TSPConstructEvaluator(Evaluator[EvalResult]):
         return -average_distance, distances.tolist()
 
     @sandbox_run(timeout=30, redirect_to_devnull=True)
-    def evaluate_program(self, program_str: str) -> EvalResult:
+    def evaluate_program(self, program_str: str):
         """Execute a candidate program and score mean tour length."""
         program_globals: dict[str, Any] = {}
         exec(program_str, program_globals)

@@ -26,7 +26,7 @@ from algodisco.common.logging_utils import format_time_info, format_error_box
 from algodisco.methods.algobleu_search.algo_database import AlgoDatabase
 from algodisco.methods.algobleu_search.config import AlgoBLEUSearchConfig
 from algodisco.methods.algobleu_search.prompt import PromptAdapter
-from algodisco.methods.algobleu_search.evaluator import BehaviorEvalResult
+from algodisco.methods.algobleu_search.evaluator import BehaveSimSearchEvaluator
 
 # Configure basic logging.
 logging.basicConfig(
@@ -40,7 +40,7 @@ class AlgoBLEUSearch(IterativeSearchBase):
     def __init__(
         self,
         config: AlgoBLEUSearchConfig,
-        evaluator: Evaluator[BehaviorEvalResult],
+        evaluator: BehaveSimSearchEvaluator,
         llm: LanguageModel = None,
         emb_llm: LanguageModel = None,
         logger: Optional[AlgoSearchLoggerBase] = None,
@@ -70,7 +70,7 @@ class AlgoBLEUSearch(IterativeSearchBase):
 
         self._llm = llm
         self._emb_llm = emb_llm
-        self._evaluator: Evaluator[BehaviorEvalResult] = evaluator
+        self._evaluator: BehaveSimSearchEvaluator = evaluator
         self._database = AlgoDatabase(config)
         self._logger = logger
         self._prompt_constructor = prompt_constructor

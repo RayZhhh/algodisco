@@ -10,13 +10,13 @@ from algodisco.base.evaluator import EvalResult, Evaluator
 class BehaviorEvalResult(EvalResult):
     """Common specialization for evaluators that must return behavior data."""
 
-    behavior_algobleu: Any
+    behavior: Any
 
 
-class BehaveSimSearchEvaluator(Evaluator[BehaviorEvalResult], ABC):
+class BehaveSimSearchEvaluator(Evaluator, ABC):
 
     @abstractmethod
-    def evaluate_program(self, program_str: str):
+    def evaluate_program(self, program_str: str) -> BehaviorEvalResult:
         """Evaluate a given program.
 
         Args:

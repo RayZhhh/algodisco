@@ -13,10 +13,10 @@ class BehaviorEvalResult(EvalResult):
     behavior: Any
 
 
-class FunSearchBehaveSimEvaluator(Evaluator[BehaviorEvalResult], ABC):
+class FunSearchBehaveSimEvaluator(Evaluator, ABC):
 
     @abstractmethod
-    def evaluate_program(self, program_str: str):
+    def evaluate_program(self, program_str: str) -> BehaviorEvalResult:
         """Evaluate a given program.
 
         Args:

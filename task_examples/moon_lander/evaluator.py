@@ -55,7 +55,7 @@ def _extract_callable(program_globals: dict[str, Any], func_name: str) -> Any:
     return program_globals[func_name]
 
 
-class MoonLanderEvaluator(Evaluator[EvalResult]):
+class MoonLanderEvaluator(Evaluator):
     """Evaluate heuristic controllers for the LunarLander environment."""
 
     def __init__(

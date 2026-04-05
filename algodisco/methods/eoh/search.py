@@ -40,7 +40,7 @@ class EoHSearch(IterativeSearchBase):
     def __init__(
         self,
         config: EoHConfig,
-        evaluator: Evaluator[EvalResult],
+        evaluator: Evaluator,
         llm: LanguageModel = None,
         logger: Optional[AlgoSearchLoggerBase] = None,
         prompt_constructor: EoHPromptAdapter = EoHPromptAdapter(),
@@ -57,7 +57,7 @@ class EoHSearch(IterativeSearchBase):
             raise ValueError("The provided template program is empty.")
 
         self._llm = llm
-        self._evaluator: Evaluator[EvalResult] = evaluator
+        self._evaluator: Evaluator = evaluator
         self._database = EoHDatabase(config.pop_size)
         self._logger = logger
         self._prompt_constructor = prompt_constructor

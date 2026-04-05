@@ -12,7 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from algodisco.base.evaluator import Evaluator, EvalResult as BaseEvalResult
+from algodisco.base.evaluator import Evaluator, EvalResult
 from algodisco.toolkit.decorators import sandbox_run
 
 try:
@@ -25,12 +25,7 @@ except ImportError:
     from task_definition import template_program
 
 
-class EvalResult(BaseEvalResult):
-    score: float
-    behavior: Any
-
-
-class AdmissibleSetEvaluator(Evaluator[EvalResult]):
+class AdmissibleSetEvaluator(Evaluator):
     """Evaluate candidate priority functions for the admissible set task."""
 
     def __init__(self, dimension=15, weight=10, **kwargs):
@@ -125,7 +120,7 @@ class AdmissibleSetEvaluator(Evaluator[EvalResult]):
         return valid_indices
 
     @sandbox_run(timeout=30, redirect_to_devnull=True)
-    def evaluate_program(self, program_str: str) -> EvalResult:
+    def evaluate_program(self, program_str: str):
         """Execute a candidate program and score the resulting admissible set."""
         g = {}
         exec(program_str, g)

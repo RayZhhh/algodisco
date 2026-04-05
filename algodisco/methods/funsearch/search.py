@@ -37,7 +37,7 @@ class FunSearch(IterativeSearchBase):
     def __init__(
         self,
         config: FunSearchConfig,
-        evaluator: Evaluator[EvalResult],
+        evaluator: Evaluator,
         llm: LanguageModel = None,
         logger: Optional[AlgoSearchLoggerBase] = None,
         prompt_constructor: PromptAdapter = PromptAdapter(),
@@ -54,7 +54,7 @@ class FunSearch(IterativeSearchBase):
             raise ValueError("The provided template program is empty.")
 
         self._llm: LanguageModel = llm
-        self._evaluator: Evaluator[EvalResult] = evaluator
+        self._evaluator: Evaluator = evaluator
         self._database = ProgramsDatabase(
             num_islands=config.db_num_islands,
             max_island_capacity=config.db_max_island_capacity,
