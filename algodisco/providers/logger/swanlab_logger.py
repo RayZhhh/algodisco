@@ -179,7 +179,7 @@ class BaseSwanLabLogger(BasePickleLogger):
 
         self._swanlab_run.log(log_items, step=step)
 
-    async def finish(self):
-        await super().finish()
+    def finish(self):
+        super().finish()
         if self._owns_swanlab_run and hasattr(self._swanlab_run, "finish"):
             self._swanlab_run.finish()

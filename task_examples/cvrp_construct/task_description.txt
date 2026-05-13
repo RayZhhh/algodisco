@@ -1,0 +1,32 @@
+Given a set of customers with 2D coordinates and demands, construct a
+Capacitated Vehicle Routing Problem solution that starts from depot `0`, serves
+every customer exactly once, and returns to the depot whenever needed.
+
+You must implement a function named `select_next_node`. Do not change this
+function name, because the evaluator will extract and call `select_next_node`
+directly.
+
+Recommended signature:
+- `def select_next_node(current_node, depot, feasible_customers, remaining_capacity, demands, distance_matrix) -> int`
+
+The evaluator constructs the route step by step:
+- It always starts from depot `0`.
+- At each step it calls `select_next_node(...)`.
+- Your function may either return one customer from `feasible_customers`, or
+  return the depot `0` to close the current vehicle trip and restart from the
+  depot.
+
+Inputs:
+- `current_node`: index of the current node
+- `depot`: index of the depot, always `0`
+- `feasible_customers`: NumPy array of unvisited customers whose demand still
+  fits the remaining capacity
+- `remaining_capacity`: unused capacity on the current vehicle
+- `demands`: NumPy array of node demands, where `demands[0] == 0`
+- `distance_matrix`: full pairwise distance matrix
+
+Output:
+- Either the index of the next customer to visit, or the depot index `0`
+
+Goal:
+- Minimize the average total route length across the bundled random instances.

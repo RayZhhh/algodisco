@@ -19,6 +19,7 @@ class FunSearchConfig(SearchConfigBase):
         samples_per_prompt: Number of candidates requested from the LLM per prompt.
         llm_max_tokens: Optional max token limit for each LLM response.
         llm_timeout_seconds: Timeout in seconds for each LLM request.
+        algo_save_frequency: Frequency for flushing algorithm logs.
         db_num_islands: Number of islands maintained in the program database.
         db_max_island_capacity: Optional per-island archive capacity limit.
         db_reset_period: Period in seconds for island reset/rebalancing.
@@ -36,6 +37,7 @@ class FunSearchConfig(SearchConfigBase):
     samples_per_prompt: int = 4
     llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
+    algo_save_frequency: Optional[int] = 2000
 
     # Database specific configs
     db_num_islands: int = 10
@@ -43,7 +45,7 @@ class FunSearchConfig(SearchConfigBase):
     db_reset_period: int = 4 * 60 * 60
     db_cluster_sampling_temperature_init: float = 0.1
     db_cluster_sampling_temperature_period: int = 30_000
-    db_save_frequency: Optional[int] = 100
+    db_save_frequency: Optional[int] = 2000
 
     # Metadata keys to keep when saving
     keep_metadata_keys: List[str] = field(

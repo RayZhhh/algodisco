@@ -40,7 +40,9 @@ llm:
 - Python 导入路径，例如 `algodisco.providers.llm.openai_api.OpenAIAPI`
 - 文件路径加类名，例如 `examples/online_bin_packing/evaluator.py:OnlineBinPackingEvaluator`
 
-`kwargs` 会原样传给构造函数。
+`kwargs` 会原样传给构造函数。你也可以使用等价的 `args` 写法。
+
+另外，`kwargs` / `args` 内部如果再出现带 `class_path` 的子配置块，AlgoDisco 也会递归实例化它们。这让“一个组件里再组合多个子组件”的写法成为可能。
 
 ## 路径解析规则
 
@@ -119,8 +121,50 @@ logger:
 - `algodisco.providers.llm.claude_api.ClaudeAPI`
 - `algodisco.providers.llm.vllm_server.VLLMServer`
 - `algodisco.providers.llm.sglang_server.SGLangServer`
+- `algodisco.providers.llm.ensemble_llm.EnsembleLLM`
 
 API Key 一类敏感信息建议通过环境变量提供，不要直接写进可提交的配置文件。
+
+### 混合 LLM 示例
+
+`EnsembleLLM` 会在多个 LLM 之间按概率随机采样。你可以直接传：
+
+- `llms`: 一个 `LanguageModel` 列表
+- `probabilities`: 一个概率列表；如果省略则默认均匀采样；如果和不为 1，会自动归一化
+
+为了让 YAML 更好写，也支持用命名模型块来组织：
+
+```yaml
+llm:
+  class_path: "algodisco.providers.llm.ensemble_llm.EnsembleLLM"
+  args:
+    models:
+      model_1:
+        llm:
+          class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+          args:
+            model: "gpt-4o-mini"
+            api_key: null
+            base_url: "https://api.openai.com/v1"
+        prob: 0.1
+      model_2:
+        llm:
+          class_path: "algodisco.providers.llm.claude_api.ClaudeAPI"
+          args:
+            model: "claude-3-5-haiku-latest"
+            api_key: null
+        prob: 0.5
+      model_3:
+        llm:
+          class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+          args:
+            model: "gpt-4o"
+            api_key: null
+            base_url: "https://api.openai.com/v1"
+        prob: 0.4
+```
+
+如果所有成员都省略 `prob`，则默认均匀采样；如果只写了一部分 `prob`，会直接报错，避免配置歧义。
 
 ## Evaluator 配置块
 

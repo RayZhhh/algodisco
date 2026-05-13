@@ -88,9 +88,7 @@ class ProgramDatabase:
         self.diversity_cache: Dict[int, Dict[str, Any]] = {}
         self.diversity_cache_size: int = 1000
         self.diversity_reference_set: List[str] = []
-        self.diversity_reference_size: int = getattr(
-            config, "diversity_reference_size", 20
-        )
+        self.diversity_reference_size: int = config.diversity_reference_size
 
         # Running min/max per feature dimension for online bin normalization.
         self.feature_stats: Dict[str, Dict[str, float]] = {}
@@ -132,7 +130,7 @@ class ProgramDatabase:
                 island_id = program.get("island_id")
             if island_id is None:
                 if parent is not None:
-                    island_id = self._get_program_field(parent, "island_id", 0)
+                    island_id = parent.get("island_id", 0)
                 else:
                     island_id = 0
 
@@ -151,10 +149,12 @@ class ProgramDatabase:
             existing_id = island_map.get(coord_key)
             should_replace = existing_id is None
 
+            # Check if the current program in the niche should be replaced.
             if existing_id is not None and existing_id in self.programs:
                 # Replacement is based on the score-backed fitness value.
                 should_replace = self._is_better(program, self.programs[existing_id])
 
+            # Replace it with new program.
             if should_replace:
                 if existing_id is not None:
                     self.islands[island_id].discard(existing_id)
@@ -167,7 +167,9 @@ class ProgramDatabase:
 
             # Refresh every secondary index after the program becomes visible.
             self._update_archive(program)
-            self._enforce_population_limit(exclude_program_id=program.algo_id)
+            self._enforce_population_limit(
+                exclude_program_id=program.algo_id  # The new algo will not be discarded.
+            )
             self._update_best_program(program)
             self._update_island_best_program(program, island_id)
 
@@ -269,7 +271,7 @@ class ProgramDatabase:
             if num_islands <= 1:
                 return
 
-            migration_rate = getattr(self.config, "migration_rate", 0.1)
+            migration_rate = self.config.migration_rate
 
             for island_id in range(num_islands):
                 # Sort each island independently so migrants are chosen from the
@@ -359,7 +361,7 @@ class ProgramDatabase:
             if not self.island_generations:
                 return False
 
-            migration_interval = getattr(self.config, "migration_interval", 50)
+            migration_interval = self.config.migration_interval
             max_generation = max(self.island_generations)
             return (
                 max_generation - self.last_migration_generation
@@ -387,29 +389,19 @@ class ProgramDatabase:
             return random.choice(non_empty_islands)
         return random.randint(0, len(self.islands) - 1)
 
-    def _get_program_field(self, program: Any, key: str, default: Any = None) -> Any:
-        """Read one field from an AlgoProto first, with dict fallback for compatibility."""
-        if isinstance(program, AlgoProto):
-            return program.get(key, default)
-        if isinstance(program, dict):
-            return program.get(key, default)
-        return default
-
-    def _capture_parent_metadata(self, program: AlgoProto, parent: Any) -> None:
+    def _capture_parent_metadata(self, program: AlgoProto, parent: AlgoProto) -> None:
         """
         Store a small amount of parent metadata without keeping recursive objects.
 
         This preserves the useful provenance needed later while ensuring that
         database entries and logs stay compact and serializable.
         """
-        parent_id = self._get_program_field(parent, "algo_id")
-        parent_island_id = self._get_program_field(parent, "island_id")
-        parent_metrics = copy.deepcopy(
-            self._get_program_field(parent, "metrics", {}) or {}
-        )
-        parent_score = self._get_program_field(parent, "score")
-        parent_evaluator_score = self._get_program_field(parent, "evaluator_score")
-        parent_fitness_score = self._get_program_field(parent, "fitness_score")
+        parent_id = parent.get("algo_id")
+        parent_island_id = parent.get("island_id")
+        parent_metrics = copy.deepcopy(parent.get("metrics", {}) or {})
+        parent_score = parent.get("score")
+        parent_evaluator_score = parent.get("evaluator_score")
+        parent_fitness_score = parent.get("fitness_score")
 
         if parent_id is not None:
             program["parent_id"] = parent_id
@@ -430,16 +422,15 @@ class ProgramDatabase:
         island_programs = [
             self.programs[pid]
             for pid in self.islands[island_id]
-            if pid in self.programs
-            and self.is_searchable_program(self.programs[pid])
+            if pid in self.programs and self.is_searchable_program(self.programs[pid])
         ]
 
         if not island_programs:
             raise ValueError("No programs available for island-local sampling")
 
         r = random.random()
-        exploration_ratio = getattr(self.config, "exploration_ratio", 0.2)
-        exploitation_ratio = getattr(self.config, "exploitation_ratio", 0.7)
+        exploration_ratio = self.config.exploration_ratio
+        exploitation_ratio = self.config.exploitation_ratio
 
         # Random exploration gives low-score or newly arrived programs a chance
         # to reproduce before exploitation dominates the island.
@@ -525,8 +516,8 @@ class ProgramDatabase:
             raise ValueError("No programs available for sampling")
 
         r = random.random()
-        exploration_ratio = getattr(self.config, "exploration_ratio", 0.2)
-        exploitation_ratio = getattr(self.config, "exploitation_ratio", 0.7)
+        exploration_ratio = self.config.exploration_ratio
+        exploitation_ratio = self.config.exploitation_ratio
 
         if r < exploration_ratio:
             return random.choice(all_programs)
@@ -589,8 +580,7 @@ class ProgramDatabase:
         island_programs = [
             self.programs[pid]
             for pid in self.islands[island_id]
-            if pid in self.programs
-            and self.is_searchable_program(self.programs[pid])
+            if pid in self.programs and self.is_searchable_program(self.programs[pid])
         ]
         if not island_programs:
             return inspirations
@@ -606,7 +596,7 @@ class ProgramDatabase:
 
         # Seed inspirations with strong local performers before falling back to
         # more exploratory MAP-Elites neighbors and random island members.
-        top_n = max(1, int(n * getattr(self.config, "elite_selection_ratio", 0.1)))
+        top_n = max(1, int(n * self.config.elite_selection_ratio))
         top_programs = self.get_top_programs(top_n, island_id=island_id)
         for program in top_programs:
             if program.algo_id != parent.algo_id and program not in inspirations:
@@ -655,16 +645,15 @@ class ProgramDatabase:
     def _calculate_feature_coords(self, program: AlgoProto) -> List[int]:
         """Map configured feature dimensions into discrete MAP-Elites bins."""
         coords = []
-        features = getattr(
-            self.config, "feature_dimensions", ["complexity", "diversity"]
-        )
-        bins = max(1, getattr(self.config, "feature_bins", 10))
+        features = self.config.feature_dimensions
+        bins = max(1, self.config.feature_bins)
         metrics = program.get("metrics", {}) or {}
 
         for feature in features:
             # Built-in dimensions are computed locally; any other configured
             # dimension must come from evaluator-returned numeric metrics.
             if feature in metrics:
+                # Check if the metric is feasible.
                 value = self._coerce_numeric(metrics.get(feature))
             elif feature == "score":
                 value = self._get_score(program)
@@ -696,7 +685,7 @@ class ProgramDatabase:
 
     def _calculate_complexity(self, program: AlgoProto) -> float:
         """Estimate structural complexity using code length or a Python AST walk."""
-        complexity_mode = getattr(self.config, "complexity_mode", "code_length")
+        complexity_mode = self.config.complexity_mode
         code = program.program or ""
 
         # Keep complexity extraction cheap and deterministic. AST mode is only
@@ -835,7 +824,7 @@ class ProgramDatabase:
 
     def _update_archive(self, program: AlgoProto) -> None:
         """Maintain a bounded archive of strong programs across all islands."""
-        archive_size = getattr(self.config, "archive_size", 100)
+        archive_size = self.config.archive_size
         if len(self.archive) < archive_size:
             self.archive.add(program.algo_id)
             return
@@ -897,8 +886,27 @@ class ProgramDatabase:
     def _enforce_population_limit(
         self, exclude_program_id: Optional[str] = None
     ) -> None:
-        """Prune the global population while preserving protected programs."""
-        population_size = getattr(self.config, "population_size", None)
+        """
+        Evict the lowest-scoring programs when the global population exceeds
+        ``config.population_size``.
+
+        If ``population_size`` is unset or non-positive the check is skipped entirely.
+        When the population is already within the limit nothing is done.
+        Otherwise programs are sorted by score ascending — worst first — and removed one by one until the count reaches the limit.
+
+        Two programs are always protected from eviction: the current global best (``best_program_id``)
+        and the program that triggered this call (``exclude_program_id``), so a
+        newly registered program can never immediately evict itself.
+
+        Each evicted program is removed from every index at once — ``programs``,
+        ``archive``, every island set, and every island feature map — and its
+        island-best pointer is cleared.
+
+        After all evictions, every island-best pointer that is now stale
+        (the cached id is gone or no longer on that island) is recomputed from the surviving island members;
+        if an island is empty the pointer is set to ``None``.
+        """
+        population_size = self.config.population_size
         if population_size is None or population_size <= 0:
             return
 
@@ -920,75 +928,63 @@ class ProgramDatabase:
                 break
             if program.algo_id in protected_ids:
                 continue
-            # Remove low-score programs first because all secondary indices can
-            # be rebuilt from the surviving population afterward.
-            self._remove_program(program.algo_id)
+
+            program_id = program.algo_id
+            # Purge from the primary store and the global archive first so no
+            # other path can observe a half-removed program.
+            del self.programs[program_id]
+            self.archive.discard(program_id)
+
+            # Clear every island set; a program can only belong to one island
+            # but iterating all is cheaper than looking up the island id here.
+            for island in self.islands:
+                island.discard(program_id)
+
+            # Remove the program from any feature-map cell it occupies and
+            # clear the cached island-best pointer if it pointed to this id.
+            for island_idx, island_map in enumerate(self.island_feature_maps):
+                for key in [k for k, pid in island_map.items() if pid == program_id]:
+                    del island_map[key]
+                if self.island_best_programs[island_idx] == program_id:
+                    self.island_best_programs[island_idx] = None
+
             removed += 1
 
         if removed > 0:
-            self._cleanup_stale_island_bests()
-
-    def _remove_program(self, program_id: str) -> None:
-        """Remove a program from all indices and bookkeeping structures."""
-        if program_id not in self.programs:
-            return
-
-        del self.programs[program_id]
-        self.archive.discard(program_id)
-
-        # The same program id can appear in multiple secondary structures, so
-        # removal must clear every view of the population.
-        for island in self.islands:
-            island.discard(program_id)
-
-        for island_idx, island_map in enumerate(self.island_feature_maps):
-            keys_to_remove = [
-                key for key, pid in island_map.items() if pid == program_id
-            ]
-            for key in keys_to_remove:
-                del island_map[key]
-
-            if self.island_best_programs[island_idx] == program_id:
-                self.island_best_programs[island_idx] = None
-
-    def _cleanup_stale_island_bests(self) -> None:
-        """Recompute island champions after pruning or elite replacement."""
-        for island_id, best_id in enumerate(self.island_best_programs):
-            if (
-                best_id is not None
-                and best_id in self.programs
-                and best_id in self.islands[island_id]
-            ):
-                continue
-
-            # If the cached best is gone, recompute from the surviving members
-            # of that island only.
-            island_programs = [
-                self.programs[pid]
-                for pid in self.islands[island_id]
-                if pid in self.programs
-                and self.is_searchable_program(self.programs[pid])
-            ]
-            if island_programs:
-                self.island_best_programs[island_id] = max(
-                    island_programs,
-                    key=self._get_score,
-                ).algo_id
-            else:
-                self.island_best_programs[island_id] = None
+            # Recompute any island-best pointer that was invalidated above.
+            # A pointer is stale when its id is gone from ``programs`` or has
+            # been removed from its island set; both cases are handled together.
+            for island_id, best_id in enumerate(self.island_best_programs):
+                if (
+                    best_id is not None
+                    and best_id in self.programs
+                    and best_id in self.islands[island_id]
+                ):
+                    continue
+                island_programs = [
+                    self.programs[pid]
+                    for pid in self.islands[island_id]
+                    if pid in self.programs
+                    and self.is_searchable_program(self.programs[pid])
+                ]
+                self.island_best_programs[island_id] = (
+                    max(island_programs, key=self._get_score).algo_id
+                    if island_programs
+                    else None
+                )
 
     def _get_score(self, program: AlgoProto) -> float:
         """Return the evaluator-score fitness used by search and database bookkeeping."""
         resolved_score = self._resolve_program_fitness(program)
         return resolved_score if resolved_score is not None else -1e9
 
-    def _resolve_program_fitness(self, program: Any) -> Optional[float]:
+    def _resolve_program_fitness(self, program: AlgoProto) -> Optional[float]:
         """Resolve the score-backed fitness for a live or serialized program."""
-        metrics = self._get_program_field(program, "metrics", {}) or {}
+        metrics = program.get("metrics", {}) or {}
         if metrics:
             return get_fitness_score(metrics, self.config.feature_dimensions)
 
-        return _coerce_finite_numeric(self._get_program_field(program, "score"))
+        return _coerce_finite_numeric(program.get("score"))
 
     def _coerce_numeric(self, value: Any) -> float:
         """Validate that a feature value is numeric and finite."""

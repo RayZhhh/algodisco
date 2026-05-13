@@ -11,10 +11,19 @@ if str(REPO_ROOT) not in sys.path:
 from algodisco.base.evaluator import Evaluator, EvalResult as BaseEvalResult
 from algodisco.toolkit.decorators import sandbox_run
 
-try:
-    from .task_definition import template_program
-except ImportError:
-    from task_definition import template_program
+from task_examples.circle_packing.task_definition import template_program
+
+REQUIRED_FUNCTION_NAME = "run_packing"
+
+
+def _extract_required_callable(program_globals: dict[str, Any]) -> Any:
+    """Return the task-required callable from an executed program namespace."""
+    if REQUIRED_FUNCTION_NAME not in program_globals:
+        raise KeyError(
+            f"Expected function `{REQUIRED_FUNCTION_NAME}` was not defined. "
+            f"Do not rename the required task entrypoint."
+        )
+    return program_globals[REQUIRED_FUNCTION_NAME]
 
 
 class EvalResult(BaseEvalResult):
@@ -73,11 +82,8 @@ class CirclePackingEvaluator(Evaluator):
         try:
             program_globals: dict[str, Any] = {}
             exec(program_str, program_globals)
-
-            if "run_packing" not in program_globals:
-                raise KeyError("Expected function `run_packing` was not defined.")
-
-            centers, radii, reported_sum = program_globals["run_packing"]()
+            run_packing = _extract_required_callable(program_globals)
+            centers, radii, reported_sum = run_packing()
 
             # Convert outputs to NumPy arrays so shape and geometry checks are
             # consistent even if the candidate returned Python lists.

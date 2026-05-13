@@ -82,6 +82,7 @@ class BehaveSimSearch(IterativeSearchBase):
 
         self._lock = threading.Lock()
         self._samples_count = 0
+        self._last_db_saved_at: int = -1
         self._evaluator_semaphore = threading.Semaphore(self._config.num_evaluators)
         self._stop_event = threading.Event()
         self._initial_recluster_done = False
@@ -101,22 +102,19 @@ class BehaveSimSearch(IterativeSearchBase):
         database_dict = self._database.to_dict()
         database_dict["sample_num"] = sample_num
         self._logger.log_dict(database_dict, "database")
+        self._last_db_saved_at = sample_num
         logging.info(f"Saved database snapshot for sample #{sample_num} to logger.")
 
     @override
     def initialize(self):
         """Initializes the search process by evaluating the template program."""
-        # Set log flush frequencies
-        db_frequency = getattr(self._config, "db_save_frequency", 1)
-        algo_frequency = getattr(self._config, "algo", 2000)
         if self._logger:
             self._logger.set_log_item_flush_frequency(
                 {
-                    "database": db_frequency,
-                    "algo": algo_frequency,
+                    "database": 1,
+                    "algo": self._config.algo_save_frequency,
                 }
             )
-
         logging.info("Evaluating template program...")
 
         template_proto = AlgoProto(
@@ -185,7 +183,8 @@ class BehaveSimSearch(IterativeSearchBase):
         finally:
             self._executor.shutdown(wait=True)
             with self._lock:
-                self._save_database(self._samples_count)
+                if self._samples_count != self._last_db_saved_at:
+                    self._save_database(self._samples_count)
             if self._logger:
                 logging.info("Finalizing logger...")
                 self._logger.finish()
@@ -433,3 +432,4 @@ class BehaveSimSearch(IterativeSearchBase):
                         log_entry[f"island_size_{i_id}"] = size
 
             self._logger.log_dict(log_entry, "algo")
+

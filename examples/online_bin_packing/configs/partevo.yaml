@@ -1,0 +1,46 @@
+# PartEvo Config for Online Bin Packing
+
+method:
+  template_program_path: "examples/online_bin_packing/template_algo.txt"
+  task_description_path: "examples/online_bin_packing/task_description.txt"
+  language: "python"
+  pop_size: 6
+  init_pop_size: 6
+  num_clusters: 3
+  cluster_refresh_interval: 4
+  init_trial_multiplier: 10
+  use_resource_tilt: false
+  resource_tilt_alpha: 2.0
+  re_operator_weight: 1
+  se_operator_weight: 1
+  cn_operator_weight: 1
+  lge_operator_weight: 1
+  archive_elite_size: 5
+  archive_hard_negative_size: 20
+  summary_update_interval: 9
+  num_samplers: auto
+  num_evaluators: auto
+  max_samples: 100
+  llm_max_tokens: 1024
+  llm_timeout_seconds: 120
+  db_save_frequency: 50
+  keep_metadata_keys: ["idea", "phase", "cluster_id", "reflection_guidance", "archive_summary", "sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
+  debug_mode: false
+  debug_mode_crash: false
+
+llm:
+  class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+  kwargs:
+    model: "gpt-4o-mini"
+    # TODO: Replace with your API key, or set OPENAI_API_KEY environment variable
+    api_key: null
+    base_url: "https://api.openai.com/v1"
+
+evaluator:
+  class_path: "examples/online_bin_packing/evaluator.py:OnlineBinPackingEvaluator"
+  kwargs: {}
+
+logger:
+  class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
+  kwargs:
+    logdir: "logs/online_bin_packing_partevo"

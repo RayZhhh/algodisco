@@ -25,6 +25,7 @@ class EoHConfig(SearchConfigBase):
         use_m2_operator: Whether to enable the M2 mutation operator.
         llm_max_tokens: Optional max token limit for each LLM response.
         llm_timeout_seconds: Timeout in seconds for each LLM request.
+        algo_save_frequency: Frequency for flushing algorithm logs.
         db_save_frequency: Frequency for persisting population snapshots to the logger.
         init_samples_ratio: Multiplier controlling samples used during initialization.
         keep_metadata_keys: Candidate metadata keys preserved when saving results.
@@ -46,7 +47,8 @@ class EoHConfig(SearchConfigBase):
     # Search parameters
     llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
-    db_save_frequency: Optional[int] = 100
+    algo_save_frequency: Optional[int] = 2000
+    db_save_frequency: Optional[int] = 2000
 
     # Initialization phase
     init_samples_ratio: float = 2.0  # Sample 2 * pop_size to initialize

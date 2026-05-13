@@ -12,10 +12,7 @@ from algodisco.common.config_loading import (
     build_method_config,
     load_yaml_config,
 )
-from algodisco.methods.algobleu_search.config import (
-    AlgoBLEUSearchConfig,
-    normalize_algobleu_method_config,
-)
+from algodisco.methods.algobleu_search.config import AlgoBLEUSearchConfig
 from algodisco.methods.algobleu_search.search import AlgoBLEUSearch
 
 
@@ -30,7 +27,6 @@ def main():
     args = parser.parse_args()
 
     config_data = load_yaml_config(args.config)
-    config_data["method"] = normalize_algobleu_method_config(config_data.get("method", {}))
     method_config, debug_mode, debug_mode_crash = build_method_config(
         config_data=config_data,
         project_root=PROJECT_ROOT,
@@ -40,6 +36,10 @@ def main():
     # Dynamically instantiate components
     llm = build_component(
         section_config=config_data.get("llm", {}),
+        project_root=PROJECT_ROOT,
+    )
+    idea_llm = build_component(
+        section_config=config_data.get("idea_llm", {}),
         project_root=PROJECT_ROOT,
     )
     emb_llm = build_component(
@@ -58,6 +58,8 @@ def main():
 
     if not llm:
         raise ValueError("An LLM must be provided in the configuration.")
+    if not idea_llm:
+        raise ValueError("An idea_llm must be provided in the configuration.")
     if not emb_llm:
         raise ValueError("An emb_llm must be provided in the configuration.")
     if not evaluator:
@@ -66,6 +68,7 @@ def main():
     search = AlgoBLEUSearch(
         config=method_config,
         llm=llm,
+        idea_llm=idea_llm,
         emb_llm=emb_llm,
         evaluator=evaluator,
         logger=logger,

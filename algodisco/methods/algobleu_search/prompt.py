@@ -43,6 +43,23 @@ _IMPROVEMENT_REQUEST_TEMPLATE = dedent("""
     Only output the code and do not give additional outputs.
     """).strip()
 
+_IMPROVEMENT_REQUEST_WITH_IDEA_TEMPLATE = dedent("""
+    Please generate an improved version of the algorithm.
+    Think outside the box. Do not modify the function signature (i.e., function name, args, ...)
+
+    Return your answer in exactly the following format:
+
+    ### Idea
+    <algorithm idea>
+
+    ### Code
+    ```{language}
+    ...
+    ```
+
+    Do not output anything before or after these two sections.
+    """).strip()
+
 _IDEA_SUMMARY_TEMPLATE = dedent("""
     Please read the following {language_capitalized} code and summarize its core idea and algorithmic approach in natural language.
     The summary should be concise and descriptive, capturing the essence of the algorithm.
@@ -64,7 +81,10 @@ class PromptAdapter:
         return template.format(**kwargs).strip()
 
     def construct_prompt(
-        self, task_description: str, sorted_algos: List[AlgoProto]
+        self,
+        task_description: str,
+        sorted_algos: List[AlgoProto],
+        idea_prompt: bool = False,
     ) -> str:
         """Constructs a few-shot prompt to guide the LLM."""
         language = sorted_algos[0].language
@@ -114,7 +134,11 @@ class PromptAdapter:
             )
         prompt += "\n\n"
         prompt += self._render_prompt(
-            _IMPROVEMENT_REQUEST_TEMPLATE,
+            (
+                _IMPROVEMENT_REQUEST_WITH_IDEA_TEMPLATE
+                if idea_prompt
+                else _IMPROVEMENT_REQUEST_TEMPLATE
+            ),
             language=language,
         )
         return prompt
@@ -143,6 +167,12 @@ if __name__ == "__main__":
 
     print("=== prompt ===")
     print(adapter.construct_prompt("Design a better scoring function.", algos))
+    print("\n=== prompt with idea ===")
+    print(
+        adapter.construct_prompt(
+            "Design a better scoring function.", algos, idea_prompt=True
+        )
+    )
     print("\n=== idea summary prompt ===")
     print(adapter.construct_idea_summary_prompt(algos[0]))
     print("\n=== extracted code ===")

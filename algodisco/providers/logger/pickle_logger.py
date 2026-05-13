@@ -90,14 +90,6 @@ class BasePickleLogger(AlgoSearchLoggerBase):
         self._caches[item_name] = []
         self._flush_counts[item_name] = 0
 
-    async def log_dict(self, log_item: Dict, item_name: str):
-        """Logs a dictionary to the cache and flushes based on frequency."""
-        self.log_dict(log_item, item_name)
-
-    async def finish(self):
-        """Flush all remaining items in the caches."""
-        self.finish()
-
     def log_dict(self, log_item: Dict, item_name: str):
         """Synchronous version of log_dict."""
         with self._lock:

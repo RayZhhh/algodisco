@@ -1,0 +1,37 @@
+import numpy as np
+
+
+# Do not rename `select_next_node`; the evaluator extracts this exact function name.
+def select_next_node(
+    current_node: int,
+    depot: int,
+    feasible_customers: np.ndarray,
+    remaining_capacity: int,
+    demands: np.ndarray,
+    distance_matrix: np.ndarray,
+) -> int:
+    """Select the next node in a constructive CVRP solution.
+
+    Args:
+        current_node: Index of the current node.
+        depot: Index of the depot node.
+        feasible_customers: Unvisited customers that fit the remaining capacity.
+        remaining_capacity: Unused vehicle capacity on the current route.
+        demands: Demand array for all nodes.
+        distance_matrix: Pairwise Euclidean distance matrix.
+
+    Returns:
+        The index of the next customer to visit, or `depot` to reset the route.
+    """
+    best_score = -1.0
+    next_node = depot
+
+    for node in feasible_customers:
+        demand = demands[node]
+        distance = distance_matrix[current_node, node]
+        score = demand / distance if distance > 0 else float("inf")
+        if score > best_score:
+            best_score = score
+            next_node = int(node)
+
+    return next_node

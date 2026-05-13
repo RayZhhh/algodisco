@@ -11,19 +11,20 @@ if str(REPO_ROOT) not in sys.path:
 from algodisco.base.evaluator import Evaluator, EvalResult
 from algodisco.toolkit.decorators import sandbox_run
 
-try:
-    from .dataset import TSPInstanceGenerator
-    from .task_definition import template_program
-except ImportError:
-    from dataset import TSPInstanceGenerator
-    from task_definition import template_program
+from task_examples.tsp_construct.dataset import TSPInstanceGenerator
+from task_examples.tsp_construct.task_definition import template_program
+
+REQUIRED_FUNCTION_NAME = "select_next_node"
 
 
-def _extract_callable(program_globals: dict[str, Any], func_name: str) -> Any:
-    """Return the expected callable from an executed program namespace."""
-    if func_name not in program_globals:
-        raise KeyError(f"Expected function `{func_name}` was not defined.")
-    return program_globals[func_name]
+def _extract_required_callable(program_globals: dict[str, Any]) -> Any:
+    """Return the task-required callable from an executed program namespace."""
+    if REQUIRED_FUNCTION_NAME not in program_globals:
+        raise KeyError(
+            f"Expected function `{REQUIRED_FUNCTION_NAME}` was not defined. "
+            f"Do not rename the required task entrypoint."
+        )
+    return program_globals[REQUIRED_FUNCTION_NAME]
 
 
 class TSPConstructEvaluator(Evaluator):
@@ -123,7 +124,7 @@ class TSPConstructEvaluator(Evaluator):
         """Execute a candidate program and score mean tour length."""
         program_globals: dict[str, Any] = {}
         exec(program_str, program_globals)
-        select_next_node = _extract_callable(program_globals, "select_next_node")
+        select_next_node = _extract_required_callable(program_globals)
         score, per_instance = self._evaluate_callable(select_next_node)
         return {
             "score": score,

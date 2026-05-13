@@ -2,6 +2,7 @@ import math
 import numpy as np
 
 
+# Do not rename `priority`; the evaluator extracts this exact function name.
 def priority(el: tuple[int, ...], n: int = 15, w: int = 10) -> float:
     """Return the priority used to rank a candidate vector.
 

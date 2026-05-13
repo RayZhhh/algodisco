@@ -1,0 +1,106 @@
+method:
+  template_program_path: "task_examples/circle_packing/template_algo.txt"
+  task_description_path: "task_examples/circle_packing/task_description.txt"
+  language: "python"
+  idea_prompt: false
+  diff_based_evolution: false
+  num_top_programs: 1
+  num_diverse_programs: 1
+  include_artifacts: false
+  template_dir: null
+  system_message: "system_message"
+  evaluator_system_message: "evaluator_system_message"
+  use_template_stochasticity: true
+  template_variations: {}
+  max_artifact_bytes: 20480
+  artifact_security_filter: true
+  suggest_simplification_after_chars: 500
+  include_changes_under_chars: 100
+  concise_implementation_max_lines: 10
+  comprehensive_implementation_min_lines: 50
+  diff_summary_max_line_len: 100
+  diff_summary_max_lines: 30
+  num_samplers: 8
+  num_evaluators: 2
+  exploration_ratio: 0.2
+  exploitation_ratio: 0.7
+  elite_selection_ratio: 0.1
+  samples_per_prompt: 1
+  max_samples: 2000
+  llm_max_tokens: null
+  llm_timeout_seconds: 600
+  db_num_islands: 10
+  db_reset_period: 14400
+  db_save_frequency: 100
+  feature_dimensions:
+    - "complexity"
+    - "diversity"
+  feature_bins: 10
+  complexity_mode: "code_length"
+  diversity_reference_size: 20
+  archive_size: 100
+  population_size: null
+  migration_interval: 50
+  migration_rate: 0.1
+  keep_metadata_keys: ["idea", "sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
+  debug_mode: false
+  debug_mode_crash: false
+
+llm:
+  class_path: "algodisco.providers.llm.ensemble_llm.EnsembleLLM"
+  kwargs:
+    models:
+      claude_sonnet_4_6:
+        llm:
+          class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+          kwargs:
+            model: "claude-sonnet-4-6"
+            api_key: "PLEASE FILL YOUR OWN KEY"
+            base_url: "https://api.bltcy.ai/v1"
+        prob: 0.2
+      gpt_4_1:
+        llm:
+          class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+          kwargs:
+            model: "gpt-4.1"
+            api_key: "PLEASE FILL YOUR OWN KEY"
+            base_url: "https://api.bltcy.ai/v1"
+        prob: 0.2
+      o4_mini:
+        llm:
+          class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+          kwargs:
+            model: "o4-mini"
+            api_key: "PLEASE FILL YOUR OWN KEY"
+            base_url: "https://api.bltcy.ai/v1"
+        prob: 0.2
+      gpt_4_1_nano:
+        llm:
+          class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+          kwargs:
+            model: "gpt-4.1-nano"
+            api_key: "PLEASE FILL YOUR OWN KEY"
+            base_url: "https://api.bltcy.ai/v1"
+        prob: 0.2
+      gpt_4_1_mini:
+        llm:
+          class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+          kwargs:
+            model: "gpt-4.1-mini"
+            api_key: "PLEASE FILL YOUR OWN KEY"
+            base_url: "https://api.bltcy.ai/v1"
+        prob: 0.2
+
+evaluator:
+  class_path: "task_examples/circle_packing/evaluator.py:CirclePackingEvaluator"
+  kwargs: {}
+
+logger:
+  class_path: "algodisco.providers.logger.swanlab_logger.BaseSwanLabLogger"
+  kwargs:
+    logdir: "results/circle_packing/openevolve/run1"
+    project: "AlgoBLEU_EXPT_circle_packing"
+    experiment_name: "openevolve_run1"
+    group: "openevolve"
+    swanlab_logdir: "results/circle_packing/openevolve/run1/swanlab"
+    api_key: "PLEASE FILL YOUR OWN KEY"

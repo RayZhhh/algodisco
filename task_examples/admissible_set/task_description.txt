@@ -8,5 +8,11 @@ vectors in {0, 1, 2}^n that satisfy the following constraints:
 The objective is to maximize the size of the admissible set while satisfying
 all constraints. In this task, use n = 15 and w = 10.
 
-Your job is to design a `priority` function that helps construct a large
+You must implement a function named `priority`. Do not change this function
+name, because the evaluator will extract and call `priority` directly.
+
+Recommended signature:
+- `def priority(el: tuple[int, ...], n: int = 15, w: int = 10) -> float`
+
+Your job is to design this `priority` function so it helps construct a large
 admissible set.

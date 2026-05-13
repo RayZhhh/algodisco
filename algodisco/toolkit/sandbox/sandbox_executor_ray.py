@@ -5,7 +5,7 @@ import logging
 import os
 import time
 import traceback
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union, Literal
 
 from algodisco.toolkit.sandbox.sandbox_executor import SandboxExecutor, ExecutionResults
 from algodisco.toolkit.sandbox.utils import _redirect_to_devnull
@@ -18,7 +18,7 @@ class SandboxExecutorRay(SandboxExecutor):
     def __init__(
         self,
         evaluate_worker: Any,
-        init_ray: bool = True,
+        init_ray: Union[bool, Literal["auto"]] = "auto",
         debug_mode: bool = False,
         *,
         ray_rotation_max_bytes: int = 50 * 1024 * 1024,  # 50 MB
@@ -40,29 +40,39 @@ class SandboxExecutorRay(SandboxExecutor):
 
         import ray
 
-        if init_ray:
-            if ray.is_initialized():
-                logging.warning(
-                    f"Ray is already initialized. "
-                    f"If you want to disable reinit, "
-                    f"please set '{self.__class__.__name__}(..., init_ray=False)'."
-                )
-            # Set environment variable before Ray initialization
+        def _do_ray_init():
+            # Set environment variable before Ray initialization.
             os.environ["RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO"] = "0"
             os.environ["RAY_ROTATION_MAX_BYTES"] = str(ray_rotation_max_bytes)
             os.environ["RAY_ROTATION_BACKUP_COUNT"] = str(ray_rotation_backup_count)
-
-            # Initialize Ray
+            # Initialize Ray.
             ray.init(
                 ignore_reinit_error=True,
                 include_dashboard=False,
                 logging_level=logging.ERROR,
                 log_to_driver=True,
             )
-        elif not ray.is_initialized():
+
+        if init_ray == "auto":
+            # Initialize ray if ray is not initialized.
+            if not ray.is_initialized():
+                _do_ray_init()
+        elif init_ray:
+            # Initialize ray no matter if it is initialized.
+            if ray.is_initialized():
+                logging.warning(
+                    f"Ray is already initialized. "
+                    f"If you want to disable reinit, "
+                    f"please set '{self.__class__.__name__}(..., init_ray=False)'."
+                )
+            _do_ray_init()
+
+        # Check if ray has been successfully initialized.
+        if not ray.is_initialized():
             raise RuntimeError(
                 f"Ray is not initialized. "
-                f"Please set '{self.__class__.__name__}(..., init_ray=True)'."
+                f"Please set '{self.__class__.__name__}(..., init_ray=True)' or "
+                f"'{self.__class__.__name__}(..., init_ray='auto')'"
             )
 
         # Create remote worker class
@@ -122,11 +132,11 @@ class SandboxExecutorRay(SandboxExecutor):
             )
         except GetTimeoutError:
             if self.debug_mode:
-                print(f"DEBUG: Ray evaluation timed out after {timeout_seconds}s.")
+                print(f"DEBUG: Ray execution timed out after {timeout_seconds}s.")
             return ExecutionResults(
                 result=None,
                 execution_time=time.time() - start_time,
-                error_msg="Evaluation timeout.",
+                error_msg="Execution timeout.",
             )
         except Exception:
             if self.debug_mode:

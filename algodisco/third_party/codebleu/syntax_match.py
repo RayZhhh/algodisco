@@ -3,8 +3,8 @@
 
 from tree_sitter import Parser
 
-from .parser import remove_comments_and_docstrings
-from .utils import get_tree_sitter_language
+from algodisco.third_party.codebleu.parser import remove_comments_and_docstrings
+from algodisco.third_party.codebleu.utils import get_tree_sitter_language
 
 
 def calc_syntax_match(references, candidate, lang):

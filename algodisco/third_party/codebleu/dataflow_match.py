@@ -4,7 +4,7 @@ import logging
 
 from tree_sitter import Parser
 
-from .parser import (
+from algodisco.third_party.codebleu.parser import (
     DFG_csharp,
     DFG_go,
     DFG_java,
@@ -17,7 +17,7 @@ from .parser import (
     remove_comments_and_docstrings,
     tree_to_token_index,
 )
-from .utils import get_tree_sitter_language
+from algodisco.third_party.codebleu.utils import get_tree_sitter_language
 
 dfg_function = {
     "python": DFG_python,

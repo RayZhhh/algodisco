@@ -1,0 +1,40 @@
+# ReEvo Config for Online Bin Packing
+
+method:
+  template_program_path: "examples/online_bin_packing/template_algo.txt"
+  task_description_path: "examples/online_bin_packing/task_description.txt"
+  language: "python"
+  pop_size: 6
+  init_pop_size: 6
+  init_trial_multiplier: 10
+  selection_mode: "random"
+  crossover_operator_weight: 2
+  mutation_operator_weight: 1
+  mutation_rate: 0.5
+  long_term_reflection_window_size: 3
+  external_knowledge: ""
+  num_samplers: auto
+  num_evaluators: auto
+  max_samples: 100
+  llm_max_tokens: 1024
+  llm_timeout_seconds: 120
+  db_save_frequency: 50
+  keep_metadata_keys: ["idea", "phase", "operator", "sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text", "reflection_guidance", "long_term_reflection", "parent_scores"]
+  debug_mode: false
+  debug_mode_crash: false
+
+llm:
+  class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+  kwargs:
+    model: "gpt-4o-mini"
+    api_key: null
+    base_url: "https://api.openai.com/v1"
+
+evaluator:
+  class_path: "examples/online_bin_packing/evaluator.py:OnlineBinPackingEvaluator"
+  kwargs: {}
+
+logger:
+  class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
+  kwargs:
+    logdir: "logs/online_bin_packing_reevo"

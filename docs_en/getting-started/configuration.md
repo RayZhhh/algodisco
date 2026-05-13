@@ -61,6 +61,9 @@ llm:
     base_url: "https://api.openai.com/v1"
 ```
 
+AlgoDisco also accepts `args` as an alias for `kwargs`.
+Nested config blocks inside `kwargs` / `args` are instantiated recursively, which makes composite components possible.
+
 ### Claude
 
 ```yaml
@@ -94,6 +97,47 @@ llm:
     gpus: 0
     launch_sglang_in_init: true
 ```
+
+### Ensemble / Mixture LLM
+
+`EnsembleLLM` samples one backend per request. It accepts either:
+
+- `llms`: a list of `LanguageModel` instances
+- `probabilities`: an optional probability list; omitted means uniform sampling, and non-unit sums are normalized automatically
+
+For YAML configs, the named `models` form is usually easier to read:
+
+```yaml
+llm:
+  class_path: "algodisco.providers.llm.ensemble_llm.EnsembleLLM"
+  args:
+    models:
+      model_1:
+        llm:
+          class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+          args:
+            model: "gpt-4o-mini"
+            api_key: null
+            base_url: "https://api.openai.com/v1"
+        prob: 0.1
+      model_2:
+        llm:
+          class_path: "algodisco.providers.llm.claude_api.ClaudeAPI"
+          args:
+            model: "claude-3-5-haiku-latest"
+            api_key: null
+        prob: 0.5
+      model_3:
+        llm:
+          class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+          args:
+            model: "gpt-4o"
+            api_key: null
+            base_url: "https://api.openai.com/v1"
+        prob: 0.4
+```
+
+If all members omit `prob`, sampling is uniform. If only some members specify `prob`, configuration loading fails to avoid ambiguity.
 
 ## Evaluator Configuration
 

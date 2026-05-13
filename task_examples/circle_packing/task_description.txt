@@ -1,7 +1,13 @@
 Design a constructive algorithm for circle packing with exactly 26 circles
 inside the unit square.
 
-Your program must provide a function `run_packing()` that returns:
+You must implement a function named `run_packing`. Do not change this function
+name, because the evaluator will extract and call `run_packing` directly.
+
+Recommended signature:
+- `def run_packing()`
+
+Your program must provide `run_packing()` and it must return:
 - `centers`: a NumPy array of shape `(26, 2)` with circle centers
 - `radii`: a NumPy array of shape `(26,)` with non-negative radii
 - `sum_radii`: the sum of all radii

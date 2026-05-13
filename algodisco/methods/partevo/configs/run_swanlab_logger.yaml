@@ -1,0 +1,47 @@
+method:
+  template_program_path: "path/to/template.py"
+  task_description_path: "path/to/task_description.txt"
+  language: "python"
+  pop_size: 10
+  init_pop_size: 10
+  num_clusters: 3
+  cluster_refresh_interval: 5
+  init_trial_multiplier: 10
+  use_resource_tilt: false
+  resource_tilt_alpha: 2.0
+  re_operator_weight: 1
+  se_operator_weight: 1
+  cn_operator_weight: 1
+  lge_operator_weight: 1
+  archive_elite_size: 5
+  archive_hard_negative_size: 30
+  summary_update_interval: 9
+  num_samplers: 1
+  num_evaluators: auto
+  max_samples: 1000
+  llm_max_tokens: 1024
+  llm_timeout_seconds: 120
+  db_save_frequency: 100
+  keep_metadata_keys: ["idea", "phase", "cluster_id", "reflection_guidance", "archive_summary", "sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
+  debug_mode: false
+  debug_mode_crash: false
+
+llm:
+  class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+  kwargs:
+    model: "gpt-3.5-turbo"
+    api_key: "your-api-key"
+    base_url: "https://api.openai.com/v1"
+
+evaluator:
+  class_path: "path/to/evaluator.py:YourEvaluator"
+  kwargs: {}
+
+logger:
+  class_path: "algodisco.providers.logger.swanlab_logger.SwanLabLogger"
+  kwargs:
+    logdir: "logs/partevo_log"
+    project_name: "algodisco"
+    experiment_name: "partevo-run"
+    group: "partevo"
+    swanlab_logdir: "logs/partevo_log/swanlab"

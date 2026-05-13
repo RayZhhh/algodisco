@@ -144,14 +144,15 @@ def sandbox_run(
             if sandbox_type == "ray":
                 import ray
 
-                init_ray = executor_init_kwargs.get("init_ray", None)
+                ray_executor_init_kwargs = executor_init_kwargs.copy()
+                init_ray = ray_executor_init_kwargs.pop("init_ray", None)
                 if init_ray is None:
-                    init_ray = not ray.is_initialized()
+                    init_ray = "auto"
 
                 executor = SandboxExecutorRay(
                     evaluate_worker,
                     init_ray=init_ray,
-                    **executor_init_kwargs,
+                    **ray_executor_init_kwargs,
                 )
                 ray_options = ray_actor_options
             elif sandbox_type == "simple":

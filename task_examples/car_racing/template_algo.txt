@@ -1,6 +1,7 @@
 import numpy as np
 
 
+# Do not rename `choose_action`; the evaluator extracts this exact function name.
 def choose_action(observation, car_speed, pre_action, pre_observation):
     """Return the next car control action."""
     action = np.array([0.0, 0.0, 0.0])

@@ -2,7 +2,7 @@
 # Licensed under the MIT license.
 
 from abc import ABC, abstractmethod
-from typing import TypedDict
+from typing import TypedDict, Dict
 
 
 class EvalResult(TypedDict):
@@ -23,7 +23,7 @@ class Evaluator(ABC):
     """Base class for program evaluators."""
 
     @abstractmethod
-    def evaluate_program(self, program_str: str) -> EvalResult:
+    def evaluate_program(self, program_str: str) -> EvalResult | Dict:
         """Evaluate a given program.
 
         Args:

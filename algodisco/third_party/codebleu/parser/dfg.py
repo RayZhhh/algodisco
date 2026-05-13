@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-from .utils import tree_to_variable_index
+from algodisco.third_party.codebleu.parser.utils import tree_to_variable_index
 
 
 def DFG_python(root_node, index_to_code, states):

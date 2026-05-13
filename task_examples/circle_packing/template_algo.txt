@@ -69,6 +69,7 @@ def compute_max_radii(centers):
 # EVOLVE-BLOCK-END
 
 
+# Do not rename `run_packing`; the evaluator extracts this exact function name.
 def run_packing():
     """Return the packing produced by ``construct_packing``."""
     return construct_packing()

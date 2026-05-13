@@ -105,6 +105,20 @@ For a task named `<task_name>`, the folder should typically contain:
   - Evaluates a constructive heuristic by average tour length across bundled
     instances.
 
+### `cvrp_construct/`
+
+- `template_algo.txt`
+  - Contains the bundled constructive heuristic `select_next_node(...)`.
+- `task_description.txt`
+  - Contains the CVRP constructive task description.
+- `task_definition.py`
+  - Loads the two text files and exposes them as Python variables.
+- `dataset.py`
+  - Generates deterministic Euclidean CVRP instances with customer demands.
+- `evaluator.py`
+  - Evaluates a constructive heuristic by average route length across bundled
+    instances while enforcing vehicle-capacity feasibility.
+
 ### `circle_packing/`
 
 - `template_algo.txt`

@@ -38,6 +38,7 @@ class OpenEvolveConfig(SearchConfigBase):
         samples_per_prompt: Number of candidates requested from the LLM per prompt.
         llm_max_tokens: Optional max token limit for each LLM response.
         llm_timeout_seconds: Timeout in seconds for each LLM request.
+        algo_save_frequency: Frequency for flushing algorithm logs.
         db_num_islands: Number of islands maintained in the MAP-Elites archive.
         db_reset_period: Period in seconds for island reset/rebalancing.
         db_save_frequency: Frequency for persisting database snapshots to the logger.
@@ -86,11 +87,12 @@ class OpenEvolveConfig(SearchConfigBase):
     samples_per_prompt: int = 1
     llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
+    algo_save_frequency: Optional[int] = 2000
 
     # Database & MAP-Elites Config
     db_num_islands: int = 10
     db_reset_period: int = 4 * 60 * 60
-    db_save_frequency: Optional[int] = 100
+    db_save_frequency: Optional[int] = 2000
 
     # Feature dimensions for MAP-Elites
     # Built-in dimensions: "complexity", "diversity", "score"
@@ -103,7 +105,7 @@ class OpenEvolveConfig(SearchConfigBase):
         20  # Size of reference set for diversity calculation
     )
     archive_size: int = 100
-    population_size: Optional[int] = None
+    population_size: Optional[int] = 1000
     migration_interval: int = 50
     migration_rate: float = 0.1
 

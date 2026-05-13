@@ -10,6 +10,8 @@ from typing import Any, Union, get_args, get_origin
 
 import yaml
 
+from algodisco.common.component_config import preprocess_component_kwargs
+
 
 def load_class(
     class_path: str | None = None,
@@ -47,6 +49,56 @@ def load_yaml_config(config_path: str | Path) -> dict[str, Any]:
     """Loads a YAML config file into a dictionary."""
     with open(config_path, "r") as f:
         return yaml.safe_load(f) or {}
+
+
+def _extract_component_kwargs(section_config: dict[str, Any]) -> dict[str, Any]:
+    """Extract constructor keyword arguments from a component config block.
+
+    We support both `kwargs` and `args` in YAML so users can choose the style
+    they find more natural. They are treated as aliases, not as two separate
+    argument sources.
+    """
+    if "kwargs" in section_config and "args" in section_config:
+        raise ValueError("Only one of 'kwargs' or 'args' may be provided in a config block.")
+
+    raw_kwargs = section_config.get("kwargs", section_config.get("args", {}))
+    if raw_kwargs is None:
+        return {}
+    if not isinstance(raw_kwargs, dict):
+        raise TypeError("Component constructor arguments must be provided as a mapping.")
+    return dict(raw_kwargs)
+
+
+def _resolve_config_value(value: Any, project_root: Path) -> Any:
+    """Recursively instantiate nested component configs inside a value.
+
+    This is what enables composite YAML such as an ensemble LLM whose child
+    models are themselves declared via nested `class_path` blocks.
+    """
+    if isinstance(value, list):
+        return [_resolve_config_value(item, project_root) for item in value]
+
+    if isinstance(value, dict):
+        is_component_config = "class_path" in value and (
+            "kwargs" in value or "args" in value or len(value) == 1
+        )
+        if is_component_config:
+            # Instantiate the nested component first, then bubble the concrete
+            # object back up into the parent's constructor kwargs.
+            return load_class(
+                class_path=value.get("class_path"),
+                kwargs=_resolve_config_value(
+                    _extract_component_kwargs(value),
+                    project_root,
+                ),
+                project_root=project_root,
+            )
+        return {
+            key: _resolve_config_value(item, project_root)
+            for key, item in value.items()
+        }
+
+    return value
 
 
 def _resolve_path(project_root: Path, path_value: str | None) -> str | None:
@@ -95,11 +147,11 @@ def instantiate_dataclass_from_dict(
         if not isinstance(value, dict):
             continue
 
-        if "class_path" in value:
-            method_config_data[field.name] = load_class(
-                class_path=value.get("class_path"),
-                kwargs=value.get("kwargs", {}),
-                project_root=project_root,
+        if "class_path" in value and (
+            "kwargs" in value or "args" in value or len(value) == 1
+        ):
+            method_config_data[field.name] = _resolve_config_value(
+                value, project_root
             )
             continue
 
@@ -164,13 +216,22 @@ def build_component(
     if not section_config:
         return None
 
-    kwargs = dict(section_config.get("kwargs", {}))
+    class_path = section_config.get("class_path")
+    kwargs = _resolve_config_value(
+        _extract_component_kwargs(section_config),
+        project_root,
+    )
+    # Allow common-layer preprocessors to translate richer YAML structures into
+    # the canonical constructor kwargs expected by runtime classes.
+    kwargs = preprocess_component_kwargs(class_path, kwargs)
     for key in path_kwargs:
         if key in kwargs and kwargs[key] is not None:
+            # Preserve the old path-resolution behavior for known path fields
+            # after nested components have already been materialized.
             kwargs[key] = _resolve_path(project_root, kwargs[key])
 
     return load_class(
-        class_path=section_config.get("class_path"),
+        class_path=class_path,
         kwargs=kwargs,
         project_root=project_root,
     )

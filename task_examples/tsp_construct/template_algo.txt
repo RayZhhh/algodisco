@@ -1,6 +1,7 @@
 import numpy as np
 
 
+# Do not rename `select_next_node`; the evaluator extracts this exact function name.
 def select_next_node(
     current_node: int,
     destination_node: int,

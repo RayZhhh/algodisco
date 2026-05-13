@@ -1,9 +1,9 @@
 """Bundled evaluation seeds for the car racing task."""
 
-# Keep the default seed split close to the original MLES example. The evaluator
-# uses the training seeds by default so task examples stay fast and deterministic.
-TRAINING_SEEDS = [1]
-TESTING_SEEDS = list(range(10, 20))
+# Match the CarRacing seed split described in the MLES paper setup:
+# four training tracks plus an unseen test range from 0 through 10.
+TRAINING_SEEDS = [40, 1231, 516, 413]
+TESTING_SEEDS = list(range(11))
 
 # Expose dictionary forms because they are convenient for per-instance metrics
 # and mirror how the upstream task represented instance collections.

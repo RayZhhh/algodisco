@@ -17,7 +17,6 @@ except ImportError:
 
 from algodisco.base.llm import LanguageModel
 from algodisco.base.algo import AlgoProto
-from algodisco.base.evaluator import Evaluator
 from algodisco.base.search_method import IterativeSearchBase
 from algodisco.base.logger import AlgoSearchLoggerBase
 from algodisco.common.timer import Timer
@@ -42,6 +41,7 @@ class AlgoBLEUSearch(IterativeSearchBase):
         config: AlgoBLEUSearchConfig,
         evaluator: BehaveSimSearchEvaluator,
         llm: LanguageModel = None,
+        idea_llm: LanguageModel = None,
         emb_llm: LanguageModel = None,
         logger: Optional[AlgoSearchLoggerBase] = None,
         prompt_constructor: PromptAdapter = PromptAdapter(),
@@ -54,13 +54,14 @@ class AlgoBLEUSearch(IterativeSearchBase):
         Args:
             config: Configuration object for the search.
             llm: Language model for code generation.
+            idea_llm: Language model for idea extraction.
             emb_llm: Language model for embeddings.
             evaluator: The evaluator to score programs.
             logger: Logger for experiment tracking.
             prompt_constructor: The component for building prompts.
         """
         # --- Tool mode assertion ---
-        assert (llm and emb_llm) or tool_mode
+        assert (llm and idea_llm and emb_llm) or tool_mode
         # ---------------------------
 
         self._config = config
@@ -69,6 +70,7 @@ class AlgoBLEUSearch(IterativeSearchBase):
             raise ValueError("The provided template program is empty.")
 
         self._llm = llm
+        self._idea_llm = idea_llm
         self._emb_llm = emb_llm
         self._evaluator: BehaveSimSearchEvaluator = evaluator
         self._database = AlgoDatabase(config)
@@ -77,6 +79,7 @@ class AlgoBLEUSearch(IterativeSearchBase):
 
         self._lock = threading.Lock()
         self._samples_count = 0
+        self._last_db_saved_at: int = -1
         self._evaluator_semaphore = threading.Semaphore(self._config.num_evaluators)
         self._stop_event = threading.Event()
         self._executor = ThreadPoolExecutor(max_workers=self._config.num_samplers)
@@ -95,22 +98,19 @@ class AlgoBLEUSearch(IterativeSearchBase):
         database_dict = self._database.to_dict()
         database_dict["sample_num"] = sample_num
         self._logger.log_dict(database_dict, "database")
+        self._last_db_saved_at = sample_num
         logging.info(f"Saved database snapshot for sample #{sample_num} to logger.")
 
     @override
     def initialize(self):
         """Initializes the search process by evaluating the template program."""
-        # Set log flush frequencies
-        db_frequency = getattr(self._config, "db_save_frequency", 1)
-        algo_frequency = getattr(self._config, "algo", 2000)
         if self._logger:
             self._logger.set_log_item_flush_frequency(
                 {
-                    "database": db_frequency,
-                    "algo": algo_frequency,
+                    "database": 1,
+                    "algo": self._config.algo_save_frequency,
                 }
             )
-
         logging.info("Evaluating template program...")
 
         template_proto = AlgoProto(
@@ -142,7 +142,7 @@ class AlgoBLEUSearch(IterativeSearchBase):
             summary_prompt = self._prompt_constructor.construct_idea_summary_prompt(
                 template_proto
             )
-            idea = self._llm.chat_completion(
+            idea = self._idea_llm.chat_completion(
                 summary_prompt,
                 self._config.llm_max_tokens,
                 self._config.llm_timeout_seconds,
@@ -199,7 +199,8 @@ class AlgoBLEUSearch(IterativeSearchBase):
         finally:
             self._executor.shutdown(wait=True)
             with self._lock:
-                self._save_database(self._samples_count)
+                if self._samples_count != self._last_db_saved_at:
+                    self._save_database(self._samples_count)
             if self._logger:
                 logging.info("Finalizing logger...")
                 self._logger.finish()
@@ -294,7 +295,9 @@ class AlgoBLEUSearch(IterativeSearchBase):
         candidate["island_id"] = island_ids[0] if island_ids else -1
 
         prompt = self._prompt_constructor.construct_prompt(
-            self._config.task_description, sorted_examples
+            self._config.task_description,
+            sorted_examples,
+            idea_prompt=self._config.idea_prompt,
         )
         candidate["prompt"] = prompt
         return candidate
@@ -375,7 +378,7 @@ class AlgoBLEUSearch(IterativeSearchBase):
                 summary_prompt = self._prompt_constructor.construct_idea_summary_prompt(
                     candidate
                 )
-                idea = self._llm.chat_completion(
+                idea = self._idea_llm.chat_completion(
                     summary_prompt,
                     self._config.llm_max_tokens,
                     self._config.llm_timeout_seconds,
@@ -463,3 +466,4 @@ class AlgoBLEUSearch(IterativeSearchBase):
                         log_entry[f"island_size_{i_id}"] = size
 
             self._logger.log_dict(log_entry, "algo")
+

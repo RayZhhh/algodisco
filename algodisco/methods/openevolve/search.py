@@ -67,6 +67,7 @@ class OpenEvolve(IterativeSearchBase):
         self._lock = threading.Lock()
         # `_samples_count` counts registered candidates plus the initial template.
         self._samples_count = 0
+        self._last_db_saved_at: int = -1
         # Limit concurrent evaluator calls independently from sampler count.
         self._evaluator_semaphore = threading.Semaphore(self._config.num_evaluators)
         self._stop_event = threading.Event()
@@ -99,22 +100,19 @@ class OpenEvolve(IterativeSearchBase):
         database_dict = self._database.to_dict()
         database_dict["sample_num"] = sample_num
         self._logger.log_dict(database_dict, "database")
+        self._last_db_saved_at = sample_num
         logging.info(f"Saved database snapshot for sample #{sample_num} to logger.")
 
     @override
     def initialize(self):
         """Initializes the search process by evaluating the template program."""
-        # Set log flush frequencies
-        db_frequency = getattr(self._config, "db_save_frequency", 1)
-        algo_frequency = getattr(self._config, "algo", 2000)
         if self._logger:
             self._logger.set_log_item_flush_frequency(
                 {
-                    "database": db_frequency,
-                    "algo": algo_frequency,
+                    "database": 1,
+                    "algo": self._config.algo_save_frequency,
                 }
             )
-
         logging.info("Evaluating template program...")
 
         template_proto = AlgoProto(
@@ -130,7 +128,7 @@ class OpenEvolve(IterativeSearchBase):
         if results is None:
             raise RuntimeError("The template program failed evaluation.")
 
-        # handle results dict or object
+        # Handle results dict or object
         if isinstance(results, dict):
             if "execution_time" in results:
                 template_proto["execution_time"] = results["execution_time"]
@@ -172,7 +170,7 @@ class OpenEvolve(IterativeSearchBase):
             # Start sampler threads
             threads = []
             for _ in range(self._config.num_samplers):
-                t = threading.Thread(target=self._sample_evaluate_register_loop)
+                t = threading.Thread(target=self._bootstrap)
                 t.start()
                 threads.append(t)
 
@@ -197,7 +195,8 @@ class OpenEvolve(IterativeSearchBase):
         finally:
             self._executor.shutdown(wait=True)
             with self._lock:
-                self._save_database(self._samples_count)
+                if self._samples_count != self._last_db_saved_at:
+                    self._save_database(self._samples_count)
             if self._logger:
                 logging.info("Finalizing logger...")
                 self._logger.finish()
@@ -220,7 +219,7 @@ class OpenEvolve(IterativeSearchBase):
     def get_config(self) -> OpenEvolveConfig:
         return self._config
 
-    def _sample_evaluate_register_loop(self):
+    def _bootstrap(self):
         """
         Run the full candidate lifecycle inside one sampler thread.
 

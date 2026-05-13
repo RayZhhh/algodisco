@@ -15,14 +15,19 @@ if str(REPO_ROOT) not in sys.path:
 from algodisco.base.evaluator import Evaluator, EvalResult
 from algodisco.toolkit.decorators import sandbox_run
 
-try:
-    # Support package-style imports such as
-    # ``import task_examples.admissible_set.evaluator``.
-    from .task_definition import template_program
-except ImportError:
-    # Support direct execution such as
-    # ``python task_examples/admissible_set/evaluator.py``.
-    from task_definition import template_program
+from task_examples.admissible_set.task_definition import template_program
+
+REQUIRED_FUNCTION_NAME = "priority"
+
+
+def _extract_required_callable(program_globals: dict[str, Any]) -> Any:
+    """Return the task-required callable from an executed program namespace."""
+    if REQUIRED_FUNCTION_NAME not in program_globals:
+        raise KeyError(
+            f"Expected function `{REQUIRED_FUNCTION_NAME}` was not defined. "
+            f"Do not rename the required task entrypoint."
+        )
+    return program_globals[REQUIRED_FUNCTION_NAME]
 
 
 class AdmissibleSetEvaluator(Evaluator):
@@ -124,7 +129,7 @@ class AdmissibleSetEvaluator(Evaluator):
         """Execute a candidate program and score the resulting admissible set."""
         g = {}
         exec(program_str, g)
-        priority_func = g["priority"]
+        priority_func = _extract_required_callable(g)
 
         # Score every valid compressed child once before the greedy selection
         # loop starts. The raw score vector is also returned as behavior data.

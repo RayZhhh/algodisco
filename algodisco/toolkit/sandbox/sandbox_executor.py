@@ -195,13 +195,13 @@ class SandboxExecutor:
                 eval_time = time.time() - evaluate_start_time
             except Empty:
                 if self.debug_mode:
-                    print(f"DEBUG: evaluation time exceeds {timeout_seconds}s.")
+                    print(f"DEBUG: execution time exceeds {timeout_seconds}s.")
 
                 # Evaluation timeout happens, we return 'None' as well as the actual evaluate time
                 return ExecutionResults(
                     result=None,
                     execution_time=time.time() - evaluate_start_time,
-                    error_msg="Evaluation timeout.",
+                    error_msg="Execution timeout.",
                 )
 
             # The 'meta' is now (Success_Flag, Data_Size_or_Error_Msg)

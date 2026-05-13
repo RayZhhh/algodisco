@@ -22,6 +22,7 @@ class BehaveSimSearchConfig(SearchConfigBase):
         inter_island_selection_p: Probability of selecting parents across islands.
         llm_max_tokens: Optional max token limit for each LLM response.
         llm_timeout_seconds: Timeout in seconds for each LLM request.
+        algo_save_frequency: Frequency for flushing algorithm logs.
         db_save_frequency: Frequency for persisting database snapshots to the logger.
         enable_database_reclustering: Whether to periodically rebuild behavior clusters.
         recluster_threshold: Number of inserts between reclustering passes.
@@ -43,7 +44,8 @@ class BehaveSimSearchConfig(SearchConfigBase):
     inter_island_selection_p: float = 0.5
     llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
-    db_save_frequency: Optional[int] = 100
+    algo_save_frequency: Optional[int] = 2000
+    db_save_frequency: Optional[int] = 2000
     enable_database_reclustering: bool = True
     recluster_threshold: int = 100
     db_algo_sim_calculator: BehaveSimCalculator = field(

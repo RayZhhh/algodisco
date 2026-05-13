@@ -101,13 +101,8 @@ class AlgoSimCalculator:
     def _dfg_similarity(self, algo1: AlgoProto, algo2: AlgoProto) -> float:
         assert algo1.language == algo2.language
         language = algo1.language
-        ts_lang = get_tree_sitter_language(language)  # Tree sitter language
-        sim1 = calc_dataflow_match(
-            [str(algo1.program)], str(algo2.program), language, ts_lang
-        )
-        sim2 = calc_dataflow_match(
-            [str(algo2.program)], str(algo1.program), language, ts_lang
-        )
+        sim1 = calc_dataflow_match([str(algo1.program)], str(algo2.program), language)
+        sim2 = calc_dataflow_match([str(algo2.program)], str(algo1.program), language)
         return (sim1 + sim2) / 2
 
     def _embedding_similarity(self, algo1: AlgoProto, algo2: AlgoProto) -> float:
@@ -148,3 +143,19 @@ class AlgoSimCalculator:
             Currently returns 0.0, as this component is not yet implemented.
         """
         return 0.0
+
+
+if __name__ == "__main__":
+    a = """
+def f(a, b):
+    return a + b
+    """
+
+    b = """
+def f(a, b):
+    a = a * b + a
+    return a + b
+    """
+
+    res = calc_dataflow_match([a], b, "python")
+    print(res)

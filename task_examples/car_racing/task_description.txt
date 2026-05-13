@@ -1,6 +1,13 @@
 Write a Python function that acts as a control policy for an agent in a
 top-down car racing environment.
 
+You must implement a function named `choose_action`. Do not change this
+function name, because the evaluator will extract and call `choose_action`
+directly.
+
+Recommended signature:
+- `def choose_action(observation, car_speed, pre_action, pre_observation)`
+
 Environment overview:
 - The environment is a continuous-control racing task.
 - The goal is to cover as much of the track as possible before the step limit.

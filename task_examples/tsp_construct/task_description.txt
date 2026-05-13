@@ -1,6 +1,13 @@
 Given a set of nodes with 2D coordinates, construct a Traveling Salesman tour
 that visits each node exactly once and returns to the starting node.
 
+You must implement a function named `select_next_node`. Do not change this
+function name, because the evaluator will extract and call `select_next_node`
+directly.
+
+Recommended signature:
+- `def select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix) -> int`
+
 The evaluator solves the problem step by step:
 - It starts from node `0`.
 - At each step it calls `select_next_node(...)`.

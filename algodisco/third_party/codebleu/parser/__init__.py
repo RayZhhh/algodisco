@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-from .DFG import (
+from algodisco.third_party.codebleu.parser.dfg import (
     DFG_csharp,
     DFG_go,
     DFG_java,
@@ -11,7 +11,7 @@ from .DFG import (
     DFG_ruby,
     DFG_rust,
 )
-from .utils import (
+from algodisco.third_party.codebleu.parser.utils import (
     index_to_code_token,
     remove_comments_and_docstrings,
     tree_to_token_index,

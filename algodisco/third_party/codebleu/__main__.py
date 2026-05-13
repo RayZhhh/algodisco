@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 from typing import List, Tuple
 
-from . import calc_codebleu
+from algodisco.third_party.codebleu import calc_codebleu
 
 PACKAGE_DIR = Path(__file__).parent
 

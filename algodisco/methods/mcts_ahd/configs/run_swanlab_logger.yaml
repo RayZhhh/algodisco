@@ -1,0 +1,51 @@
+method:
+  template_program_path: "path/to/template.py"
+  task_description_path: "path/to/task_description.txt"
+  language: "python"
+  pop_size: 10
+  init_pop_size: auto
+  selection_num: 2
+  alpha: 0.5
+  lambda_0: 0.1
+  max_tree_depth: 10
+  init_trial_multiplier: 10
+  expansion_retry_limit: 3
+  use_e2_operator: true
+  use_m1_operator: true
+  use_m2_operator: true
+  use_s1_operator: true
+  e1_weight: 0
+  e2_weight: 1
+  m1_weight: 2
+  m2_weight: 2
+  s1_weight: 1
+  num_samplers: auto
+  num_evaluators: auto
+  max_samples: 1000
+  llm_max_tokens: 1024
+  llm_timeout_seconds: 120
+  db_save_frequency: 100
+  keep_metadata_keys: ["idea", "phase", "tree_depth", "sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
+  debug_mode: false
+  debug_mode_crash: false
+
+llm:
+  class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
+  kwargs:
+    model: "gpt-3.5-turbo"
+    api_key: "your-api-key"
+    base_url: "https://api.openai.com/v1"
+
+evaluator:
+  class_path: "path/to/evaluator.py:YourEvaluator"
+  kwargs: {}
+
+logger:
+  class_path: "algodisco.providers.logger.swanlab_logger.BaseSwanLabLogger"
+  kwargs:
+    logdir: "logs/mcts_ahd_log"
+    project: "your-swanlab-project"
+    experiment_name: "mcts_ahd-run"
+    group: "mcts_ahd"
+    swanlab_logdir: "logs/mcts_ahd_log/swanlab"
+    api_key: null

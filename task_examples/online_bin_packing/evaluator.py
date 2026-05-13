@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -13,14 +14,20 @@ if str(REPO_ROOT) not in sys.path:
 from algodisco.base.evaluator import Evaluator, EvalResult
 from algodisco.toolkit.decorators import sandbox_run
 
-try:
-    # Support package-style imports when the evaluator is imported as a module.
-    from .dataset import weibull_5k
-    from .task_definition import template_program
-except ImportError:
-    # Support direct execution from the command line for quick verification.
-    from dataset import weibull_5k
-    from task_definition import template_program
+from task_examples.online_bin_packing.dataset import weibull_5k
+from task_examples.online_bin_packing.task_definition import template_program
+
+REQUIRED_FUNCTION_NAME = "priority"
+
+
+def _extract_required_callable(program_globals: dict[str, Any]) -> Any:
+    """Return the task-required callable from an executed program namespace."""
+    if REQUIRED_FUNCTION_NAME not in program_globals:
+        raise KeyError(
+            f"Expected function `{REQUIRED_FUNCTION_NAME}` was not defined. "
+            f"Do not rename the required task entrypoint."
+        )
+    return program_globals[REQUIRED_FUNCTION_NAME]
 
 
 def get_valid_bin_indices(item: float, bins: np.ndarray) -> np.ndarray:
@@ -69,7 +76,7 @@ class OnlineBinPackingEvaluator(Evaluator):
         """Execute a candidate program and score mean bin usage."""
         g = {}
         exec(program_str, g)
-        priority_func = g["priority"]
+        priority_func = _extract_required_callable(g)
 
         num_bins_list = []
 

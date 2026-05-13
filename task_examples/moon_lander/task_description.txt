@@ -1,6 +1,13 @@
 Implement a heuristic action-selection function for the Lunar Lander control
 task.
 
+You must implement a function named `choose_action`. Do not change this
+function name, because the evaluator will extract and call `choose_action`
+directly.
+
+Recommended signature:
+- `def choose_action(s: list, last_action: int, s_pre: list) -> int`
+
 At each step, the function receives:
 - `s`: the current 8-dimensional state vector
 - `last_action`: the previous action

@@ -17,6 +17,7 @@ class RandSampleConfig(SearchConfigBase):
         max_samples: Maximum number of candidates to sample before stopping.
         llm_max_tokens: Optional max token limit for each LLM response.
         llm_timeout_seconds: Timeout in seconds for each LLM request.
+        algo_save_frequency: Frequency for flushing algorithm logs.
         keep_metadata_keys: Candidate metadata keys preserved when saving results.
     """
 
@@ -26,6 +27,7 @@ class RandSampleConfig(SearchConfigBase):
     max_samples: Optional[int] = field(default=1000, kw_only=True)
     llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
+    algo_save_frequency: Optional[int] = 2000
 
     # Metadata keys to keep when saving
     keep_metadata_keys: List[str] = field(

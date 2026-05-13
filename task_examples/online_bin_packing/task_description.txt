@@ -1,7 +1,13 @@
 Online bin packing receives items one by one and must place each item
 immediately, without revisiting earlier decisions.
 
-Design a `priority` function that scores every currently valid bin for the
+You must implement a function named `priority`. Do not change this function
+name, because the evaluator will extract and call `priority` directly.
+
+Recommended signature:
+- `def priority(item: float, bins: np.ndarray) -> np.ndarray`
+
+Design this `priority` function so it scores every currently valid bin for the
 incoming item. The evaluator assigns the item to the valid bin with the highest
 priority score.
 

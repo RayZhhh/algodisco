@@ -1,6 +1,7 @@
 import numpy as np
 
 
+# Do not rename `priority`; the evaluator extracts this exact function name.
 def priority(item: float, bins: np.ndarray) -> np.ndarray:
     """Return a priority score for each currently valid bin.
 

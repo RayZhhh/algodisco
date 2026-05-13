@@ -208,7 +208,7 @@ __marimo__/
 
 # Mine
 **/temp
-#**/fake_run
+**/fake_run
 **/_ignore
 #**/admissible_set
 **/OpenEvolveSimple.md
@@ -236,3 +236,6 @@ FunSearch-AdmissibleSet-run1
 **/tests
 **/test
 **/.claude
+tests/
+**/algodisco_old
+

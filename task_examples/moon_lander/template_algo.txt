@@ -1,6 +1,7 @@
 import numpy as np
 
 
+# Do not rename `choose_action`; the evaluator extracts this exact function name.
 def choose_action(s: list, last_action: int, s_pre: list) -> int:
     """Return the next Lunar Lander action."""
     angle_targ = s[0] * 0.5 + s[2] * 1.0

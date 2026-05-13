@@ -74,15 +74,12 @@ class RandSample(IterativeSearchBase):
     @override
     def initialize(self):
         """Initializes the search process by evaluating the template program."""
-        # Set log flush frequencies
-        algo_frequency = getattr(self._config, "algo", 2000)
         if self._logger:
             self._logger.set_log_item_flush_frequency(
                 {
-                    "algo": algo_frequency,
+                    "algo": self._config.algo_save_frequency,
                 }
             )
-
         logging.info("Evaluating template program...")
 
         template_proto = AlgoProto(

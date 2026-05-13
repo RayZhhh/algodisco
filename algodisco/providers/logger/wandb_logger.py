@@ -125,7 +125,7 @@ class BaseWandbLogger(BasePickleLogger):
         log_items = self._prepare_wandb_log_items(log_item)
         self._wandb_run.log(log_items, step=step)
 
-    async def finish(self):
-        await super().finish()
+    def finish(self):
+        super().finish()
         if hasattr(self._wandb_run, "finish"):
             self._wandb_run.finish()
