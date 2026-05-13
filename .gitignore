@@ -238,4 +238,6 @@ FunSearch-AdmissibleSet-run1
 **/.claude
 tests/
 **/algodisco_old
-
+**/algobleu_search
+**/funsearch_behavesim
+**/openevolve_bkup_*
