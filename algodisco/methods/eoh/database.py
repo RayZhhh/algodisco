@@ -22,7 +22,7 @@ class EoHDatabase:
     def register_algo(self, algo: AlgoProto):
         """Adds a new algorithm to the population and performs survival if full."""
         algo_copy = copy.deepcopy(algo)
-        algo_copy.pop("parents")
+        algo_copy.pop("parents", None)
 
         with self._lock:
             if algo.score is None or not np.isfinite(algo.score):

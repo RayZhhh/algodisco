@@ -23,7 +23,7 @@ class Evaluator(ABC):
     """Base class for program evaluators."""
 
     @abstractmethod
-    def evaluate_program(self, program_str: str) -> EvalResult | Dict:
+    def evaluate_program(self, program_str: str) -> EvalResult | Dict | TypedDict:
         """Evaluate a given program.
 
         Args:
