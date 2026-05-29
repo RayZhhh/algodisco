@@ -2,6 +2,7 @@
 # Licensed under the MIT license.
 
 import math
+import copy
 import threading
 from typing import Any, Dict, List, Optional
 
@@ -95,13 +96,18 @@ class MCTSAHDDatabase:
             if not math.isfinite(algo.score):
                 return False
         except (TypeError, ValueError):
-            return False
-
-        with self._lock:
-            if self.has_duplicate(algo):
                 return False
 
-            self._population.append(algo)
+        algo_copy = copy.deepcopy(algo)
+        algo_copy.pop("parents", None)
+        algo_copy.pop("_tree_parent_node", None)
+        algo_copy.pop("_local_programs_seen", None)
+
+        with self._lock:
+            if self.has_duplicate(algo_copy):
+                return False
+
+            self._population.append(algo_copy)
             self._survival()
             return True
 

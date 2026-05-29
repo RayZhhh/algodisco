@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import copy
 import random
 import re
 import statistics
@@ -433,16 +434,18 @@ class PartEvoDatabase:
         """
         if algo is None or not _is_finite_score(algo.score):
             return False
+        algo_copy = copy.deepcopy(algo)
+        algo_copy.pop("parents", None)
 
         with self._lock:
-            self.archive.register(algo)
+            self.archive.register(algo_copy)
 
             existing_index = None
             for index, existing in enumerate(self._population):
                 # Global deduplication is intentionally code-based. PartEvo
                 # benefits from keeping equally scored but behaviorally distinct
                 # candidates because those candidates may seed different niches.
-                if str(existing.program) == str(algo.program):
+                if str(existing.program) == str(algo_copy.program):
                     existing_index = index
                     break
 
@@ -450,28 +453,30 @@ class PartEvoDatabase:
                 # A refreshed version of the same code can still be useful if
                 # the evaluator score improved, so we update in place.
                 existing = self._population[existing_index]
-                if algo.score >= existing.score:
-                    self._population[existing_index] = algo
+                if algo_copy.score >= existing.score:
+                    self._population[existing_index] = algo_copy
                 else:
                     return False
             else:
                 # New code enters the global candidate pool immediately, then
                 # survival trims the pool back to the elite capacity.
-                self._population.append(algo)
+                self._population.append(algo_copy)
 
             self._survival()
-            accepted = any(item.algo_id == algo.algo_id for item in self._population)
+            accepted = any(
+                item.algo_id == algo_copy.algo_id for item in self._population
+            )
             if not accepted:
                 return False
 
-            if self._global_best is None or algo.score >= self._global_best.score:
-                self._global_best = algo
+            if self._global_best is None or algo_copy.score >= self._global_best.score:
+                self._global_best = algo_copy
 
             if self._is_clustered:
                 # Once clustering has started, every accepted candidate should
                 # be routed back into one niche so local operator selection has
                 # up-to-date state.
-                self._register_into_cluster(algo, source_cluster_id)
+                self._register_into_cluster(algo_copy, source_cluster_id)
                 self._accepted_since_last_cluster += 1
                 if self._accepted_since_last_cluster >= self._cluster_refresh_interval:
                     # Periodic re-clustering lets the niches adapt as the elite

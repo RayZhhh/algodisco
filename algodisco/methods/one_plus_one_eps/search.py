@@ -7,7 +7,7 @@ import threading
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional
+from typing import List, Optional
 
 try:
     from typing import override
@@ -64,6 +64,7 @@ class OnePlusOneEPS(IterativeSearchBase):
         self._executor = ThreadPoolExecutor(max_workers=self._config.num_samplers)
 
         self._best_program: Optional[AlgoProto] = None
+        self._searched_algos: List[AlgoProto] = []
 
         # Debug mode: print all errors during search (can be set after instantiation)
         # When True, errors are logged at ERROR level instead of WARNING
@@ -98,6 +99,7 @@ class OnePlusOneEPS(IterativeSearchBase):
         with self._lock:
             self._samples_count += 1
             self._best_program = template_proto
+            self._searched_algos.append(self._copy_algo_for_storage(template_proto))
             self._log(template_proto, is_template=True)
 
     def run(self):
@@ -156,6 +158,11 @@ class OnePlusOneEPS(IterativeSearchBase):
     @override
     def get_config(self) -> OnePlusOneEPSConfig:
         return self._config
+
+    @override
+    def get_top_k_algos(self, k: int) -> List[AlgoProto]:
+        with self._lock:
+            return self._get_top_k_algos_from_list(self._searched_algos, k)
 
     def _generate_evaluate_register_loop(self):
         """The main loop for a single sampler thread."""
@@ -315,8 +322,9 @@ class OnePlusOneEPS(IterativeSearchBase):
 
         if self._logger:
             # Keep only specified metadata keys for logging
-            algo_proto.keep_metadata_keys(self._config.keep_metadata_keys)
-            log_entry = algo_proto.to_dict()
+            log_algo_proto = copy.deepcopy(algo_proto)
+            log_algo_proto.keep_metadata_keys(self._config.keep_metadata_keys)
+            log_entry = log_algo_proto.to_dict()
             log_entry.update(
                 {
                     "sample_num": current_sample_num,
@@ -341,10 +349,12 @@ class OnePlusOneEPS(IterativeSearchBase):
             self._samples_count += 1
 
             if algo_proto.score is not None:
+                stored_algo_proto = self._copy_algo_for_storage(algo_proto)
+                self._searched_algos.append(stored_algo_proto)
                 if (
                     self._best_program is None
                     or algo_proto.score > self._best_program.score
                 ):
-                    self._best_program = copy.deepcopy(algo_proto)
+                    self._best_program = copy.deepcopy(stored_algo_proto)
 
             self._log(algo_proto)

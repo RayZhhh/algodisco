@@ -35,7 +35,7 @@ class EoHDatabase:
             ):
                 return
 
-            self._population.append(algo)
+            self._population.append(algo_copy)
             self._survival()
 
     def _survival(self):

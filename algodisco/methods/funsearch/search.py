@@ -72,6 +72,7 @@ class FunSearch(IterativeSearchBase):
         self._evaluator_semaphore = threading.Semaphore(self._config.num_evaluators)
         self._stop_event = threading.Event()
         self._executor = ThreadPoolExecutor(max_workers=self._config.num_samplers)
+        self._searched_algos: List[AlgoProto] = []
 
         # Debug mode: print all errors during search (can be set after instantiation)
         # When True, errors are logged at ERROR level instead of WARNING
@@ -120,6 +121,7 @@ class FunSearch(IterativeSearchBase):
         with self._lock:
             self._samples_count += 1
             template_proto["island_id"] = -1
+            self._searched_algos.append(self._copy_algo_for_storage(template_proto))
             self._log(template_proto, is_template=True)
 
     def run(self):
@@ -182,6 +184,11 @@ class FunSearch(IterativeSearchBase):
     @override
     def get_config(self) -> FunSearchConfig:
         return self._config
+
+    @override
+    def get_top_k_algos(self, k: int) -> List[AlgoProto]:
+        with self._lock:
+            return self._get_top_k_algos_from_list(self._searched_algos, k)
 
     def _bootstrap(self):
         """The main loop for a single sampler thread."""
@@ -364,9 +371,9 @@ class FunSearch(IterativeSearchBase):
 
         # Register to the logger no matter if it is feasible.
         if self._logger:
-            # Keep only specified metadata keys for logging
-            algo_proto.keep_metadata_keys(self._config.keep_metadata_keys)
-            log_entry = algo_proto.to_dict()
+            log_algo_proto = copy.deepcopy(algo_proto)
+            log_algo_proto.keep_metadata_keys(self._config.keep_metadata_keys)
+            log_entry = log_algo_proto.to_dict()
             log_entry.update(
                 {
                     "sample_num": current_sample_num,
@@ -402,15 +409,18 @@ class FunSearch(IterativeSearchBase):
             # Update samples count.
             self._samples_count += 1
 
+            registered_algo_proto = copy.deepcopy(algo_proto)
+            registered_algo_proto.keep_metadata_keys(
+                self._config.keep_metadata_keys
+            )
+
             # If the generated algo is feasible, register to the database.
             if algo_proto.score is not None:
-                # Remove redundant metadata
-                registered_algo_proto = copy.deepcopy(algo_proto)
-                registered_algo_proto.keep_metadata_keys(
-                    self._config.keep_metadata_keys
-                )
                 self._database.register_program(
                     registered_algo_proto, island_id=island_id
+                )
+                self._searched_algos.append(
+                    self._copy_algo_for_storage(registered_algo_proto)
                 )
 
             # Print, save to algo using logger, save database using logger.

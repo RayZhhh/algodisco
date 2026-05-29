@@ -7,7 +7,7 @@ import threading
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional
+from typing import List, Optional
 
 try:
     from typing import override
@@ -64,6 +64,7 @@ class RandSample(IterativeSearchBase):
         self._executor = ThreadPoolExecutor(max_workers=self._config.num_samplers)
 
         self._template_program: Optional[AlgoProto] = None
+        self._searched_algos: List[AlgoProto] = []
 
         # Debug mode: print all errors during search (can be set after instantiation)
         # When True, errors are logged at ERROR level instead of WARNING
@@ -98,6 +99,7 @@ class RandSample(IterativeSearchBase):
         with self._lock:
             self._samples_count += 1
             self._template_program = template_proto
+            self._searched_algos.append(self._copy_algo_for_storage(template_proto))
             self._log(template_proto, is_template=True)
 
     def run(self):
@@ -156,6 +158,11 @@ class RandSample(IterativeSearchBase):
     @override
     def get_config(self) -> RandSampleConfig:
         return self._config
+
+    @override
+    def get_top_k_algos(self, k: int) -> List[AlgoProto]:
+        with self._lock:
+            return self._get_top_k_algos_from_list(self._searched_algos, k)
 
     def _generate_evaluate_register_loop(self):
         """The main loop for a single sampler thread."""
@@ -336,5 +343,8 @@ class RandSample(IterativeSearchBase):
                 return
 
             self._samples_count += 1
+
+            if algo_proto.score is not None:
+                self._searched_algos.append(self._copy_algo_for_storage(algo_proto))
 
             self._log(algo_proto)

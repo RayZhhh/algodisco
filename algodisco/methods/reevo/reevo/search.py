@@ -86,6 +86,7 @@ class ReEvoSearch(IterativeSearchBase):
         self._phase = "bootstrap"
 
         self._seed_algo: Optional[AlgoProto] = None
+        self._searched_algos: List[AlgoProto] = []
         self._long_term_reflection = self._config.external_knowledge.strip()
         self._short_term_reflection_history: List[str] = []
         self._short_term_reflection_version = 0
@@ -156,6 +157,7 @@ class ReEvoSearch(IterativeSearchBase):
 
         with self._lock:
             self._samples_count += 1
+            self._searched_algos.append(self._copy_algo_for_storage(template_proto))
             self._log(template_proto, is_template=True, accepted_by_population=True)
 
     def run(self) -> None:
@@ -212,6 +214,11 @@ class ReEvoSearch(IterativeSearchBase):
     def get_config(self) -> ReEvoConfig:
         """Return the active method configuration."""
         return self._config
+
+    @override
+    def get_top_k_algos(self, k: int) -> List[AlgoProto]:
+        with self._lock:
+            return self._get_top_k_algos_from_list(self._searched_algos, k)
 
     def _try_enter_search_phase(self) -> None:
         """Switch from bootstrap into iterative search once population is ready."""
@@ -537,7 +544,11 @@ class ReEvoSearch(IterativeSearchBase):
                     self._short_term_reflection_version += 1
 
             if algo_proto.program and self._has_valid_score(algo_proto.score):
-                accepted_by_population = self._database.register_algo(algo_proto)
+                registered_algo_proto = self._copy_algo_for_storage(algo_proto)
+                self._searched_algos.append(copy.deepcopy(registered_algo_proto))
+                accepted_by_population = self._database.register_algo(
+                    registered_algo_proto
+                )
 
             self._try_enter_search_phase()
             self._log(algo_proto, accepted_by_population=accepted_by_population)
@@ -591,8 +602,9 @@ class ReEvoSearch(IterativeSearchBase):
         )
 
         if self._logger:
-            algo_proto.keep_metadata_keys(self._config.keep_metadata_keys)
-            log_entry = algo_proto.to_dict()
+            log_algo_proto = copy.deepcopy(algo_proto)
+            log_algo_proto.keep_metadata_keys(self._config.keep_metadata_keys)
+            log_entry = log_algo_proto.to_dict()
             log_entry.update(
                 {
                     "sample_num": current_sample_num,

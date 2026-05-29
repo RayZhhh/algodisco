@@ -116,6 +116,7 @@ class MCTSAHDSearch(IterativeSearchBase):
         self._max_initialization_trials = (
             self._config.init_trial_multiplier * self._config.init_pop_size
         )
+        self._searched_algos: List[AlgoProto] = []
 
         # Debug mode: print all errors during search (can be set after instantiation)
         self.debug_mode = False
@@ -201,6 +202,10 @@ class MCTSAHDSearch(IterativeSearchBase):
 
         with self._lock:
             self._samples_count += 1
+            if self._has_valid_score(template_proto.score):
+                self._searched_algos.append(
+                    self._copy_algo_for_storage(template_proto)
+                )
             self._log(template_proto, is_template=True)
 
     def run(self) -> None:
@@ -261,6 +266,11 @@ class MCTSAHDSearch(IterativeSearchBase):
     def get_config(self) -> MCTSAHDConfig:
         """Return the active method configuration."""
         return self._config
+
+    @override
+    def get_top_k_algos(self, k: int) -> List[AlgoProto]:
+        with self._lock:
+            return self._get_top_k_algos_from_list(self._searched_algos, k)
 
     def _build_candidate(
         self,
@@ -742,15 +752,17 @@ class MCTSAHDSearch(IterativeSearchBase):
                 # within one leaf expansion wave.
                 local_duplicate = algo_proto.program in local_programs_seen
 
-            if (
-                algo_proto.program
-                and self._has_valid_score(algo_proto.score)
-                and not local_duplicate
-            ):
-                stored_algo_proto = copy.deepcopy(algo_proto)
-                stored_algo_proto.keep_metadata_keys(
-                    self._config.keep_metadata_keys
+            is_valid_algo = algo_proto.program and self._has_valid_score(
+                algo_proto.score
+            )
+            if is_valid_algo:
+                stored_algo_proto = self._copy_algo_for_storage(
+                    algo_proto,
+                    drop_metadata_keys=["_tree_parent_node", "_local_programs_seen"],
                 )
+                self._searched_algos.append(copy.deepcopy(stored_algo_proto))
+
+            if is_valid_algo and not local_duplicate:
                 accepted_by_population = self._database.register_algo(stored_algo_proto)
                 if accepted_by_population and local_programs_seen is not None:
                     local_programs_seen.add(algo_proto.program)
@@ -845,5 +857,3 @@ class MCTSAHDSearch(IterativeSearchBase):
                 }
             )
             self._logger.log_dict(log_entry, "algo")
-
-

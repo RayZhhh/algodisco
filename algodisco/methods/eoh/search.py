@@ -68,6 +68,7 @@ class EoHSearch(IterativeSearchBase):
         self._evaluator_semaphore = threading.Semaphore(self._config.num_evaluators)
         self._stop_event = threading.Event()
         self._executor = ThreadPoolExecutor(max_workers=self._config.num_samplers)
+        self._searched_algos: List[AlgoProto] = []
 
         # Debug mode: print all errors during search (can be set after instantiation)
         # When True, errors are logged at ERROR level instead of WARNING
@@ -126,6 +127,10 @@ class EoHSearch(IterativeSearchBase):
         with self._lock:
             self._samples_count += 1
             template_proto["island_id"] = -1
+            if self._has_valid_score(template_proto.score):
+                self._searched_algos.append(
+                    self._copy_algo_for_storage(template_proto)
+                )
             self._log(template_proto, is_template=True)
 
     def run(self):
@@ -186,6 +191,11 @@ class EoHSearch(IterativeSearchBase):
     @override
     def get_config(self) -> EoHConfig:
         return self._config
+
+    @override
+    def get_top_k_algos(self, k: int) -> List[AlgoProto]:
+        with self._lock:
+            return self._get_top_k_algos_from_list(self._searched_algos, k)
 
     def _generate_evaluate_register_loop(self):
         """The main loop for a single sampler thread."""
@@ -374,7 +384,9 @@ class EoHSearch(IterativeSearchBase):
             self._samples_count += 1
 
             if self._has_valid_score(algo_proto.score):
-                self._database.register_algo(algo_proto)
+                registered_algo_proto = self._copy_algo_for_storage(algo_proto)
+                self._database.register_algo(registered_algo_proto)
+                self._searched_algos.append(copy.deepcopy(registered_algo_proto))
 
             self._log(algo_proto)
 
@@ -412,8 +424,9 @@ class EoHSearch(IterativeSearchBase):
 
         if self._logger:
             # Keep only specified metadata keys for logging
-            algo_proto.keep_metadata_keys(self._config.keep_metadata_keys)
-            log_entry = algo_proto.to_dict()
+            log_algo_proto = copy.deepcopy(algo_proto)
+            log_algo_proto.keep_metadata_keys(self._config.keep_metadata_keys)
+            log_entry = log_algo_proto.to_dict()
             log_entry.update(
                 {
                     "sample_num": current_sample_num,
@@ -427,4 +440,3 @@ class EoHSearch(IterativeSearchBase):
             log_entry["best_score"] = self._database.get_best_score()
 
             self._logger.log_dict(log_entry, "algo")
-

@@ -83,6 +83,7 @@ class OpenEvolve(IterativeSearchBase):
             )
             // max(1, self._config.db_num_islands),
         )
+        self._searched_algos: List[AlgoProto] = []
 
         # Debug mode: print all errors during search (can be set after instantiation)
         # When True, errors are logged at ERROR level instead of WARNING
@@ -158,6 +159,7 @@ class OpenEvolve(IterativeSearchBase):
             self._samples_count += 1
             # Keep the template out of island accounting in terminal/log output.
             template_proto["island_id"] = -1
+            self._searched_algos.append(self._copy_algo_for_storage(template_proto))
             self._log(template_proto, is_template=True)
 
     def run(self):
@@ -218,6 +220,11 @@ class OpenEvolve(IterativeSearchBase):
     @override
     def get_config(self) -> OpenEvolveConfig:
         return self._config
+
+    @override
+    def get_top_k_algos(self, k: int) -> List[AlgoProto]:
+        with self._lock:
+            return self._get_top_k_algos_from_list(self._searched_algos, k)
 
     def _bootstrap(self):
         """
@@ -604,7 +611,11 @@ class OpenEvolve(IterativeSearchBase):
             self._samples_count += 1
 
             if self._database.is_searchable_program(algo_proto):
-                self._database.register_program(algo_proto, island_id=island_id)
+                self._searched_algos.append(self._copy_algo_for_storage(algo_proto))
+                registered_algo_proto = copy.deepcopy(algo_proto)
+                self._database.register_program(
+                    registered_algo_proto, island_id=island_id
+                )
                 if island_id >= 0:
                     self._database.increment_island_generation(island_id)
                     # Check migration immediately after registration so island

@@ -120,6 +120,7 @@ class PartEvoSearch(IterativeSearchBase):
             self._config.init_trial_multiplier * self._config.init_pop_size
         )
         self._phase = "init"
+        self._searched_algos: list[AlgoProto] = []
 
         # Debug flags follow the conventions of the other search methods.
         self.debug_mode = False
@@ -201,6 +202,10 @@ class PartEvoSearch(IterativeSearchBase):
 
         with self._lock:
             self._samples_count += 1
+            if self._has_valid_score(template_proto.score):
+                self._searched_algos.append(
+                    self._copy_algo_for_storage(template_proto)
+                )
             self._log(template_proto, is_template=True)
 
     def run(self) -> None:
@@ -261,6 +266,11 @@ class PartEvoSearch(IterativeSearchBase):
     def get_config(self) -> PartEvoConfig:
         """Return the active method configuration."""
         return self._config
+
+    @override
+    def get_top_k_algos(self, k: int) -> list[AlgoProto]:
+        with self._lock:
+            return self._get_top_k_algos_from_list(self._searched_algos, k)
 
     def _build_candidate(
         self,
@@ -617,14 +627,12 @@ class PartEvoSearch(IterativeSearchBase):
                 # All acceptance logic flows through the database so global
                 # population control, archive maintenance, and cluster routing
                 # stay in one place.
-                registered_algo_proto = copy.deepcopy(algo_proto)
-                registered_algo_proto.keep_metadata_keys(
-                    self._config.keep_metadata_keys
-                )
+                registered_algo_proto = self._copy_algo_for_storage(algo_proto)
                 self._database.register_algo(
                     registered_algo_proto,
                     source_cluster_id=algo_proto.get("cluster_id"),
                 )
+                self._searched_algos.append(copy.deepcopy(registered_algo_proto))
 
             self._try_enter_clustered_phase()
             self._log(algo_proto)
@@ -697,4 +705,3 @@ class PartEvoSearch(IterativeSearchBase):
                 }
             )
             self._logger.log_dict(log_entry, "algo")
-

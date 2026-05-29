@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import math
+import copy
 import random
 import threading
 from typing import Any, Dict, List, Optional, Tuple
@@ -42,25 +43,30 @@ class ReEvoDatabase:
         """Insert one candidate into the elite population if it survives."""
         if algo is None or not _is_valid_score(algo.score):
             return False
+        algo_copy = copy.deepcopy(algo)
+        algo_copy.pop("parents", None)
 
         with self._lock:
             for index, existing in enumerate(self._population):
-                if str(existing.program) == str(algo.program):
+                if str(existing.program) == str(algo_copy.program):
                     # Code-level duplicates keep only the stronger refreshed
                     # evaluation so the population does not fragment.
-                    if algo.score >= existing.score:
-                        self._population[index] = algo
+                    if algo_copy.score >= existing.score:
+                        self._population[index] = algo_copy
                         self._survival()
-                        return any(item.algo_id == algo.algo_id for item in self._population)
+                        return any(
+                            item.algo_id == algo_copy.algo_id
+                            for item in self._population
+                        )
                     return False
-                if existing.score == algo.score:
+                if existing.score == algo_copy.score:
                     # ReEvo intentionally avoids keeping many score-tied elites
                     # because its prompts already compare only one parent pair.
                     return False
 
-            self._population.append(algo)
+            self._population.append(algo_copy)
             self._survival()
-            return any(item.algo_id == algo.algo_id for item in self._population)
+            return any(item.algo_id == algo_copy.algo_id for item in self._population)
 
     def _survival(self) -> None:
         """Keep only the top-scoring `pop_size` algorithms."""

@@ -2,7 +2,9 @@
 # Licensed under the MIT license.
 
 import abc
+import copy
 import dataclasses
+import math
 import os
 from typing import Union, List, Optional, Literal
 from algodisco.base.algo import AlgoProto
@@ -78,6 +80,45 @@ class IterativeSearchBase(abc.ABC):
     def current_num_samples(self) -> int:
         """Returns the current number of samples generated."""
         pass
+
+    @abc.abstractmethod
+    def get_top_k_algos(self, k: int) -> List[AlgoProto]:
+        pass
+
+    def _get_top_k_algos_from_list(
+        self, algos: List[AlgoProto], k: int
+    ) -> List[AlgoProto]:
+        """Return deep-copied algorithms sorted by score descending."""
+        if k <= 0:
+            return []
+
+        scored_algos = []
+        for algo in algos:
+            if algo.score is None:
+                continue
+            try:
+                if not math.isfinite(algo.score):
+                    continue
+            except (TypeError, ValueError):
+                continue
+            scored_algos.append(algo)
+        top_algos = sorted(scored_algos, key=lambda algo: algo.score, reverse=True)[:k]
+        return [copy.deepcopy(algo) for algo in top_algos]
+
+    def _copy_algo_for_storage(
+        self,
+        algo: AlgoProto,
+        *,
+        drop_metadata_keys: Optional[List[str]] = None,
+    ) -> AlgoProto:
+        """Return a deep copy suitable for long-lived search state."""
+        stored_algo = copy.deepcopy(algo)
+        keys_to_drop = ["parents"]
+        if drop_metadata_keys:
+            keys_to_drop.extend(drop_metadata_keys)
+        for key in keys_to_drop:
+            stored_algo.pop(key, None)
+        return stored_algo
 
     @abc.abstractmethod
     def get_config(self) -> SearchConfigBase:
