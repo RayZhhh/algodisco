@@ -45,9 +45,14 @@ def load_class(
     return cls(**kwargs)
 
 
-def load_yaml_config(config_path: str | Path) -> dict[str, Any]:
-    """Load a YAML config file with OmegaConf and return plain Python data."""
+def load_yaml_config(
+    config_path: str | Path,
+    overrides: list[str] | None = None,
+) -> dict[str, Any]:
+    """Load a YAML config file with optional OmegaConf CLI overrides."""
     config = OmegaConf.load(config_path)
+    if overrides:
+        config = OmegaConf.merge(config, OmegaConf.from_cli(overrides))
     data = OmegaConf.to_container(config, resolve=True)
     if data is None:
         return {}

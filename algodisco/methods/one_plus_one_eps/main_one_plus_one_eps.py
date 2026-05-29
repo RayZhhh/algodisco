@@ -24,9 +24,9 @@ def main():
         default=str(PROJECT_ROOT / "examples" / "online_bin_packing" / "configs" / "one_plus_one_eps.yaml"),
         help="Path to the YAML config file",
     )
-    args = parser.parse_args()
+    args, config_overrides = parser.parse_known_args()
 
-    config_data = load_yaml_config(args.config)
+    config_data = load_yaml_config(args.config, config_overrides)
     method_config, debug_mode, debug_mode_crash = build_method_config(
         config_data=config_data,
         project_root=PROJECT_ROOT,
