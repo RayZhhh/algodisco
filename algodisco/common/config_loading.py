@@ -8,7 +8,7 @@ from pathlib import Path
 from types import UnionType
 from typing import Any, Union, get_args, get_origin
 
-import yaml
+from omegaconf import OmegaConf
 
 from algodisco.common.component_config import preprocess_component_kwargs
 
@@ -46,9 +46,14 @@ def load_class(
 
 
 def load_yaml_config(config_path: str | Path) -> dict[str, Any]:
-    """Loads a YAML config file into a dictionary."""
-    with open(config_path, "r") as f:
-        return yaml.safe_load(f) or {}
+    """Load a YAML config file with OmegaConf and return plain Python data."""
+    config = OmegaConf.load(config_path)
+    data = OmegaConf.to_container(config, resolve=True)
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        raise TypeError("Top-level config must be a mapping.")
+    return data
 
 
 def _extract_component_kwargs(section_config: dict[str, Any]) -> dict[str, Any]:
