@@ -7,7 +7,10 @@
 #   ./run_online_bin_packing.sh openevolve       # Run OpenEvolve
 #   ./run_online_bin_packing.sh eoh             # Run EoH
 #   ./run_online_bin_packing.sh one_plus_one_eps # Run (1+1)-EPS
+#   ./run_online_bin_packing.sh mcts_ahd        # Run MCTS-AHD
+#   ./run_online_bin_packing.sh partevo         # Run PartEvo
 #   ./run_online_bin_packing.sh randsample      # Run RandSample
+#   ./run_online_bin_packing.sh reevo           # Run ReEvo
 #
 # For SwanLab version:
 #   ./run_online_bin_packing.sh funsearch_swanlab
@@ -24,33 +27,8 @@
 METHOD="${1:-funsearch}"
 CONFIG_FILE="examples/online_bin_packing/configs/${METHOD}.yaml"
 
-# Map method names to their module paths
-case "$METHOD" in
-    funsearch|funsearch_swanlab)
-        MODULE="algodisco.methods.funsearch.main_funsearch"
-        ;;
-    openevolve)
-        MODULE="algodisco.methods.openevolve.main_openevolve"
-        ;;
-    eoh)
-        MODULE="algodisco.methods.eoh.main_eoh"
-        ;;
-    one_plus_one_eps)
-        MODULE="algodisco.methods.one_plus_one_eps.main_one_plus_one_eps"
-        ;;
-    randsample)
-        MODULE="algodisco.methods.randsample.main_randsample"
-        ;;
-    *)
-        echo "Unknown method: $METHOD"
-        echo "Available methods: funsearch, openevolve, eoh, one_plus_one_eps, randsample, funsearch_swanlab"
-        exit 1
-        ;;
-esac
-
 echo "Running Online Bin Packing with $METHOD..."
 echo "Config: $CONFIG_FILE"
-echo "Module: $MODULE"
 echo ""
 
-python -m "$MODULE" --config "$CONFIG_FILE"
+algodisco run "$METHOD" --config "$CONFIG_FILE" "${@:2}"

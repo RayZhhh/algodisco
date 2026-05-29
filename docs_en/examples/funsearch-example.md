@@ -145,7 +145,7 @@ logger:
 
 ```bash
 export OPENAI_API_KEY="your-api-key"
-python algodisco/methods/funsearch/main_funsearch.py --config configs/max_value_funsearch.yaml
+algodisco run funsearch --config configs/max_value_funsearch.yaml
 ```
 
 ## 6. 分析结果

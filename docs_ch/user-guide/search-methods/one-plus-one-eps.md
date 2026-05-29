@@ -43,7 +43,7 @@ logger:
 
 运行:
 ```bash
-python algodisco/methods/one_plus_one_eps/main_one_plus_one_eps.py --config config.yaml
+algodisco run one_plus_one_eps --config config.yaml
 ```
 
 ## API 参考

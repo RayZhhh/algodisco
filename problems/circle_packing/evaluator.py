@@ -11,7 +11,7 @@ if str(REPO_ROOT) not in sys.path:
 from algodisco.base.evaluator import Evaluator, EvalResult as BaseEvalResult
 from algodisco.toolkit.decorators import sandbox_run
 
-from task_examples.circle_packing.task_definition import template_program
+from problems.circle_packing.task_definition import template_program
 
 REQUIRED_FUNCTION_NAME = "run_packing"
 

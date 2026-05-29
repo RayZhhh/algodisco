@@ -1,0 +1,1 @@
+"""Circle packing problem definition."""

@@ -67,7 +67,7 @@ logger:
 ## Run the Config
 
 ```bash
-python -m algodisco.methods.funsearch.main_funsearch --config config.yaml
+algodisco run funsearch --config config.yaml
 ```
 
 ## Reusing the Bundled Example
@@ -76,7 +76,7 @@ Instead of writing a config from scratch, start from an existing one:
 
 ```bash
 cp examples/online_bin_packing/configs/funsearch.yaml my_config.yaml
-python -m algodisco.methods.funsearch.main_funsearch --config my_config.yaml
+algodisco run funsearch --config my_config.yaml
 ```
 
 ## Common Provider Configs
@@ -144,7 +144,7 @@ bash examples/run_online_bin_packing.sh openevolve
 bash examples/run_online_bin_packing.sh eoh
 ```
 
-That script is just a convenience wrapper around the `python -m algodisco.methods...` entry points.
+That script is just a convenience wrapper around the `algodisco run ...` entry point.
 
 ## Next Steps
 

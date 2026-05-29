@@ -1,0 +1,1 @@
+"""Moon lander problem definition."""

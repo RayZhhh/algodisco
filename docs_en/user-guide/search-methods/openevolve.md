@@ -99,7 +99,7 @@ logger:
 ### 运行
 
 ```bash
-python algodisco/methods/openevolve/main_openevolve.py --config openevolve.yaml
+algodisco run openevolve --config openevolve.yaml
 ```
 
 ## API 参考

@@ -87,7 +87,7 @@ logger:
 ### 运行
 
 ```bash
-python algodisco/methods/eoh/main_eoh.py --config eoh.yaml
+algodisco run eoh --config eoh.yaml
 ```
 
 ## API 参考

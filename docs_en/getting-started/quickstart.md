@@ -42,8 +42,7 @@ bash examples/run_online_bin_packing.sh funsearch
 Equivalent direct entry point:
 
 ```bash
-python -m algodisco.methods.funsearch.main_funsearch \
-  --config examples/online_bin_packing/configs/funsearch.yaml
+algodisco run funsearch --config examples/online_bin_packing/configs/funsearch.yaml
 ```
 
 This example uses:
@@ -69,7 +68,7 @@ After the example runs once, change only one thing at a time:
 
 - Lower `max_samples` in `examples/online_bin_packing/configs/funsearch.yaml` for faster smoke tests
 - Switch the model in the `llm` section
-- Try another method such as `openevolve` or `one_plus_one_eps`
+- Try another method such as `openevolve`, `mcts_ahd`, `partevo`, or `reevo`
 
 ## What the YAML Config Looks Like
 

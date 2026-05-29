@@ -43,7 +43,7 @@ examples/online_bin_packing/configs/funsearch.yaml
 在仓库根目录执行：
 
 ```bash
-python -m algodisco.methods.funsearch.main_funsearch --config examples/online_bin_packing/configs/funsearch.yaml
+algodisco run funsearch --config examples/online_bin_packing/configs/funsearch.yaml
 ```
 
 程序启动后会持续生成候选程序、执行评测并写入日志。默认输出目录是：
@@ -66,11 +66,14 @@ logs/online_bin_packing_funsearch
 
 | 方法 | 命令 |
 | --- | --- |
-| FunSearch | `python -m algodisco.methods.funsearch.main_funsearch --config examples/online_bin_packing/configs/funsearch.yaml` |
-| OpenEvolve | `python -m algodisco.methods.openevolve.main_openevolve --config examples/online_bin_packing/configs/openevolve.yaml` |
-| EoH | `python -m algodisco.methods.eoh.main_eoh --config examples/online_bin_packing/configs/eoh.yaml` |
-| (1+1)-EPS | `python -m algodisco.methods.one_plus_one_eps.main_one_plus_one_eps --config examples/online_bin_packing/configs/one_plus_one_eps.yaml` |
-| RandSample | `python -m algodisco.methods.randsample.main_randsample --config examples/online_bin_packing/configs/randsample.yaml` |
+| FunSearch | `algodisco run funsearch --config examples/online_bin_packing/configs/funsearch.yaml` |
+| OpenEvolve | `algodisco run openevolve --config examples/online_bin_packing/configs/openevolve.yaml` |
+| EoH | `algodisco run eoh --config examples/online_bin_packing/configs/eoh.yaml` |
+| (1+1)-EPS | `algodisco run one_plus_one_eps --config examples/online_bin_packing/configs/one_plus_one_eps.yaml` |
+| MCTS-AHD | `algodisco run mcts_ahd --config examples/online_bin_packing/configs/mcts_ahd.yaml` |
+| PartEvo | `algodisco run partevo --config examples/online_bin_packing/configs/partevo.yaml` |
+| RandSample | `algodisco run randsample --config examples/online_bin_packing/configs/randsample.yaml` |
+| ReEvo | `algodisco run reevo --config examples/online_bin_packing/configs/reevo.yaml` |
 
 ## 如何改成自己的任务
 

@@ -107,7 +107,7 @@ logger:
 ### 2. 运行搜索
 
 ```bash
-python algodisco/methods/funsearch/main_funsearch.py --config funsearch.yaml
+algodisco run funsearch --config funsearch.yaml
 ```
 
 ## API 参考

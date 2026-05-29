@@ -2,16 +2,8 @@
 # Licensed under the MIT license.
 
 import argparse
-from pathlib import Path
 
-# Automatically detect the project root (4 levels up from this file).
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-
-from algodisco.common.config_loading import (
-    build_component,
-    build_method_config,
-    load_yaml_config,
-)
+from algodisco.common.runner import PROJECT_ROOT, run_search_from_config
 from algodisco.methods.one_plus_one_eps.config import OnePlusOneEPSConfig
 from algodisco.methods.one_plus_one_eps.search import OnePlusOneEPS
 
@@ -26,42 +18,13 @@ def main():
     )
     args, config_overrides = parser.parse_known_args()
 
-    config_data = load_yaml_config(args.config, config_overrides)
-    method_config, debug_mode, debug_mode_crash = build_method_config(
-        config_data=config_data,
-        project_root=PROJECT_ROOT,
+    run_search_from_config(
+        config_path=args.config,
         config_cls=OnePlusOneEPSConfig,
-    )
-
-    # Dynamically instantiate components
-    llm = build_component(
-        section_config=config_data.get("llm", {}),
+        search_cls=OnePlusOneEPS,
         project_root=PROJECT_ROOT,
+        config_overrides=config_overrides,
     )
-    evaluator = build_component(
-        section_config=config_data.get("evaluator", {}),
-        project_root=PROJECT_ROOT,
-    )
-    logger = build_component(
-        section_config=config_data.get("logger", {}),
-        project_root=PROJECT_ROOT,
-        path_kwargs=("logdir", "swanlab_logdir"),
-    )
-
-    if not llm:
-        raise ValueError("An LLM must be provided in the configuration.")
-    if not evaluator:
-        raise ValueError("An Evaluator must be provided in the configuration.")
-
-    search = OnePlusOneEPS(
-        config=method_config, llm=llm, evaluator=evaluator, logger=logger
-    )
-
-    # Set debug mode from config
-    search.debug_mode = debug_mode
-    search.debug_mode_crash = debug_mode_crash
-
-    search.run()
 
 
 if __name__ == "__main__":

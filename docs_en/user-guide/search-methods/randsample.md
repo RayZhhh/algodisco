@@ -41,7 +41,7 @@ logger:
 
 运行:
 ```bash
-python algodisco/methods/randsample/main_randsample.py --config config.yaml
+algodisco run randsample --config config.yaml
 ```
 
 ## API 参考

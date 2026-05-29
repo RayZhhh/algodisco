@@ -1,54 +1,46 @@
 # Copyright (c) 2026 Rui Zhang
 # Licensed under the MIT license.
 
-import argparse
 from pathlib import Path
-
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+from typing import Any
 
 from algodisco.common.config_loading import (
     build_component,
     build_method_config,
     load_yaml_config,
 )
-from algodisco.methods.reevo.config import ReEvoConfig
-from algodisco.methods.reevo.search import ReEvoSearch
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Run ReEvo algorithm search.")
-    parser.add_argument(
-        "--config",
-        type=str,
-        default=str(
-            PROJECT_ROOT
-            / "examples"
-            / "online_bin_packing"
-            / "configs"
-            / "reevo.yaml"
-        ),
-        help="Path to the YAML config file",
-    )
-    args, config_overrides = parser.parse_known_args()
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-    config_data = load_yaml_config(args.config, config_overrides)
+
+def run_search_from_config(
+    *,
+    config_path: str | Path,
+    config_cls: type,
+    search_cls: type,
+    project_root: Path = PROJECT_ROOT,
+    config_overrides: list[str] | None = None,
+) -> Any:
+    """Build and run one search method from a YAML config file."""
+    config_data = load_yaml_config(config_path, config_overrides)
     method_config, debug_mode, debug_mode_crash = build_method_config(
         config_data=config_data,
-        project_root=PROJECT_ROOT,
-        config_cls=ReEvoConfig,
+        project_root=project_root,
+        config_cls=config_cls,
     )
 
     llm = build_component(
         section_config=config_data.get("llm", {}),
-        project_root=PROJECT_ROOT,
+        project_root=project_root,
     )
     evaluator = build_component(
         section_config=config_data.get("evaluator", {}),
-        project_root=PROJECT_ROOT,
+        project_root=project_root,
     )
     logger = build_component(
         section_config=config_data.get("logger", {}),
-        project_root=PROJECT_ROOT,
+        project_root=project_root,
         path_kwargs=("logdir", "swanlab_logdir"),
     )
 
@@ -57,7 +49,7 @@ def main():
     if not evaluator:
         raise ValueError("An Evaluator must be provided in the configuration.")
 
-    search = ReEvoSearch(
+    search = search_cls(
         config=method_config,
         llm=llm,
         evaluator=evaluator,
@@ -66,7 +58,4 @@ def main():
     search.debug_mode = debug_mode
     search.debug_mode_crash = debug_mode_crash
     search.run()
-
-
-if __name__ == "__main__":
-    main()
+    return search

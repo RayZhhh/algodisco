@@ -15,7 +15,7 @@ AlgoDisco: Method Implementations and Tools for<br/>LLM-driven Automated Algorit
 
 ## ✨ Key features
 
-- **Multiple Search Methods**: FunSearch, OpenEvolve, EoH, (1+1)-EPS, RandSample
+- **Multiple Search Methods**: FunSearch, OpenEvolve, EoH, (1+1)-EPS, MCTS-AHD, PartEvo, RandSample, ReEvo
 - **Multiple LLM Providers**: OpenAI, Claude, vLLM, SGLang
 - **Sandboxed Execution**: Safe evaluation of generated algorithms
 - **Flexible Configuration**: YAML-based configuration system
@@ -65,7 +65,10 @@ For more details, see [Quick Start](docs_en/getting-started/quickstart.md).
 - OpenEvolve
 - EoH
 - (1+1)-EPS
+- MCTS-AHD
+- PartEvo
 - RandSample
+- ReEvo
 
 ## 💡 Quick example
 
@@ -93,7 +96,10 @@ Configs for each method are in `examples/online_bin_packing/configs/`:
 | OpenEvolve | `configs/openevolve.yaml` |
 | EoH | `configs/eoh.yaml` |
 | (1+1)-EPS | `configs/one_plus_one_eps.yaml` |
+| MCTS-AHD | `configs/mcts_ahd.yaml` |
+| PartEvo | `configs/partevo.yaml` |
 | RandSample | `configs/randsample.yaml` |
+| ReEvo | `configs/reevo.yaml` |
 
 1. Copy and edit the config:
    ```bash
@@ -117,11 +123,20 @@ Configs for each method are in `examples/online_bin_packing/configs/`:
    # Run with (1+1)-EPS
    bash examples/run_online_bin_packing.sh one_plus_one_eps
 
+   # Run with MCTS-AHD
+   bash examples/run_online_bin_packing.sh mcts_ahd
+
+   # Run with PartEvo
+   bash examples/run_online_bin_packing.sh partevo
+
    # Run with RandSample
    bash examples/run_online_bin_packing.sh randsample
+
+   # Run with ReEvo
+   bash examples/run_online_bin_packing.sh reevo
    ```
 
-Available methods: `funsearch`, `openevolve`, `eoh`, `one_plus_one_eps`, `randsample`
+Available methods: `funsearch`, `openevolve`, `eoh`, `one_plus_one_eps`, `mcts_ahd`, `partevo`, `randsample`, `reevo`
 
 For SwanLab integration, use `funsearch_swanlab`:
    ```bash
@@ -143,7 +158,7 @@ For SwanLab integration, use `funsearch_swanlab`:
 
 3. Run:
    ```bash
-   python -m algodisco.methods.funsearch.main_funsearch --config my_experiment.yaml
+   algodisco run funsearch --config my_experiment.yaml
    ```
 
 ## 📝 Citation

@@ -45,8 +45,8 @@ if str(REPO_ROOT) not in sys.path:
 from algodisco.base.evaluator import Evaluator, EvalResult
 from algodisco.toolkit.decorators import sandbox_run
 
-from task_examples.car_racing.dataset import TRAINING_INSTANCES, TESTING_INSTANCES
-from task_examples.car_racing.task_definition import template_program
+from problems.car_racing.dataset import TRAINING_INSTANCES, TESTING_INSTANCES
+from problems.car_racing.task_definition import template_program
 
 REQUIRED_FUNCTION_NAME = "choose_action"
 

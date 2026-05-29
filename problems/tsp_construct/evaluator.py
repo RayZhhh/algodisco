@@ -11,8 +11,8 @@ if str(REPO_ROOT) not in sys.path:
 from algodisco.base.evaluator import Evaluator, EvalResult
 from algodisco.toolkit.decorators import sandbox_run
 
-from task_examples.tsp_construct.dataset import TSPInstanceGenerator
-from task_examples.tsp_construct.task_definition import template_program
+from problems.tsp_construct.dataset import TSPInstanceGenerator
+from problems.tsp_construct.task_definition import template_program
 
 REQUIRED_FUNCTION_NAME = "select_next_node"
 

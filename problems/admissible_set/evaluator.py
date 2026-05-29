@@ -15,7 +15,7 @@ if str(REPO_ROOT) not in sys.path:
 from algodisco.base.evaluator import Evaluator, EvalResult
 from algodisco.toolkit.decorators import sandbox_run
 
-from task_examples.admissible_set.task_definition import template_program
+from problems.admissible_set.task_definition import template_program
 
 REQUIRED_FUNCTION_NAME = "priority"
 

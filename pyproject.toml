@@ -69,12 +69,16 @@ codebleu = [
     "tree_sitter_rust",
 ]
 
+[project.scripts]
+algodisco = "algodisco.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["algodisco", "algodisco.*"]
+include = ["algodisco", "algodisco.*", "problems", "problems.*"]
 exclude = ["algodisco_old*"]
 
 [tool.setuptools.package-data]
+"*" = ["configs/*.yaml", "*.txt"]
 "algodisco.third_party.codebleu" = ["keywords/*.txt", "py.typed"]
 
 [tool.ruff]

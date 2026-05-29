@@ -14,8 +14,8 @@ if str(REPO_ROOT) not in sys.path:
 from algodisco.base.evaluator import Evaluator, EvalResult
 from algodisco.toolkit.decorators import sandbox_run
 
-from task_examples.online_bin_packing.dataset import weibull_5k
-from task_examples.online_bin_packing.task_definition import template_program
+from problems.online_bin_packing.dataset import weibull_5k
+from problems.online_bin_packing.task_definition import template_program
 
 REQUIRED_FUNCTION_NAME = "priority"
 

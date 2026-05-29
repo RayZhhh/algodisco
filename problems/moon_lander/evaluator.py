@@ -38,9 +38,9 @@ if str(REPO_ROOT) not in sys.path:
 from algodisco.base.evaluator import Evaluator, EvalResult
 from algodisco.toolkit.decorators import sandbox_run
 
-from task_examples.moon_lander.dataset import TRAINING_INSTANCES, TESTING_INSTANCES
-from task_examples.moon_lander.feature_pipeline import moon_lander_feature
-from task_examples.moon_lander.task_definition import template_program
+from problems.moon_lander.dataset import TRAINING_INSTANCES, TESTING_INSTANCES
+from problems.moon_lander.feature_pipeline import moon_lander_feature
+from problems.moon_lander.task_definition import template_program
 
 REQUIRED_FUNCTION_NAME = "choose_action"
 

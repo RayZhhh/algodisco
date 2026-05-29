@@ -147,7 +147,7 @@ logger:
 
 ```bash
 export OPENAI_API_KEY="your-api-key"
-python algodisco/methods/openevolve/main_openevolve.py --config configs/sort_openevolve.yaml
+algodisco run openevolve --config configs/sort_openevolve.yaml
 ```
 
 ## 6. 分析结果

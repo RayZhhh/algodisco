@@ -1,6 +1,6 @@
 method:
-  template_program_path: "task_examples/circle_packing/template_algo.txt"
-  task_description_path: "task_examples/circle_packing/task_description.txt"
+  template_program_path: "problems/circle_packing/template_algo.txt"
+  task_description_path: "problems/circle_packing/task_description.txt"
   language: "python"
   idea_prompt: false
   diff_based_evolution: false
@@ -92,7 +92,7 @@ llm:
         prob: 0.2
 
 evaluator:
-  class_path: "task_examples/circle_packing/evaluator.py:CirclePackingEvaluator"
+  class_path: "problems/circle_packing/evaluator.py:CirclePackingEvaluator"
   kwargs: {}
 
 logger:

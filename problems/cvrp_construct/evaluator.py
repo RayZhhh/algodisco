@@ -11,8 +11,8 @@ if str(REPO_ROOT) not in sys.path:
 from algodisco.base.evaluator import Evaluator
 from algodisco.toolkit.decorators import sandbox_run
 
-from task_examples.cvrp_construct.dataset import CVRPInstanceGenerator
-from task_examples.cvrp_construct.task_definition import template_program
+from problems.cvrp_construct.dataset import CVRPInstanceGenerator
+from problems.cvrp_construct.task_definition import template_program
 
 REQUIRED_FUNCTION_NAME = "select_next_node"
 
