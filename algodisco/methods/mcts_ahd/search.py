@@ -49,14 +49,6 @@ class MCTSAHDSearch(IterativeSearchBase):
     candidates concurrently in the same style as EoH.
     """
 
-    _EXCLUDED_LOG_KEYS = frozenset(
-        {
-            "accepted_by_population",
-            "accepted_by_tree",
-            "assigned_cluster_id",
-        }
-    )
-
     def __init__(
         self,
         config: MCTSAHDConfig,
@@ -131,36 +123,22 @@ class MCTSAHDSearch(IterativeSearchBase):
         except (TypeError, ValueError):
             return False
 
-    def _sanitize_log_value(self, value):
-        """Drop method-local runtime fields that should not enter logger outputs."""
-        if isinstance(value, dict):
-            return {
-                key: self._sanitize_log_value(item)
-                for key, item in value.items()
-                if key not in self._EXCLUDED_LOG_KEYS
-            }
-        if isinstance(value, list):
-            return [self._sanitize_log_value(item) for item in value]
-        if isinstance(value, tuple):
-            return tuple(self._sanitize_log_value(item) for item in value)
-        return value
-
     def _serialize_algo_for_logging(self, algo_proto: AlgoProto) -> dict:
         """Serialize one candidate using the method's metadata allowlist."""
         log_algo_proto = copy.deepcopy(algo_proto)
         log_algo_proto.keep_metadata_keys(self._config.keep_metadata_keys)
-        return self._sanitize_log_value(log_algo_proto.to_dict())
+        return log_algo_proto.to_dict()
 
     def _save_database(self, sample_num: int) -> None:
         """Persist the current population and tree summary through the logger."""
         if not self._logger:
             return
 
-        database_dict = self._sanitize_log_value(self._database.to_dict())
+        database_dict = self._database.to_dict()
         database_dict["sample_num"] = sample_num
         database_dict["phase"] = self._phase
         if self._tree is not None:
-            database_dict["tree"] = self._sanitize_log_value(self._tree.to_dict())
+            database_dict["tree"] = self._tree.to_dict()
 
         self._logger.log_dict(database_dict, "database")
         self._last_db_saved_at = sample_num
@@ -203,9 +181,7 @@ class MCTSAHDSearch(IterativeSearchBase):
         with self._lock:
             self._samples_count += 1
             if self._has_valid_score(template_proto.score):
-                self._searched_algos.append(
-                    self._copy_algo_for_storage(template_proto)
-                )
+                self._searched_algos.append(self._copy_algo_for_storage(template_proto))
             self._log(template_proto, is_template=True)
 
     def run(self) -> None:
@@ -219,7 +195,7 @@ class MCTSAHDSearch(IterativeSearchBase):
 
             threads = []
             for _ in range(self._config.num_samplers):
-                thread = threading.Thread(target=self._generate_evaluate_register_loop)
+                thread = threading.Thread(target=self._bootstrap)
                 thread.start()
                 threads.append(thread)
 
@@ -481,7 +457,9 @@ class MCTSAHDSearch(IterativeSearchBase):
                 else:
                     # During initialization there is no tree yet, so `e1`
                     # falls back to the current elite population snapshot.
-                    parents = [copy.deepcopy(algo) for algo in self._database.population]
+                    parents = [
+                        copy.deepcopy(algo) for algo in self._database.population
+                    ]
                     tree_parent_node = None
 
                 if not parents:
@@ -594,7 +572,7 @@ class MCTSAHDSearch(IterativeSearchBase):
 
         return None
 
-    def _generate_evaluate_register_loop(self) -> None:
+    def _bootstrap(self) -> None:
         """Main lifecycle loop for a single MCTS-AHD sampler thread."""
         while not self.is_stopped():
             with self._lock:
@@ -836,11 +814,9 @@ class MCTSAHDSearch(IterativeSearchBase):
             f"Score: {score_str}",
             f"Sample: {sample_time_str}",
             time_info,
+            f"Depth: {tree_depth_str}",
         ]
-        status_parts.append(f"Depth: {tree_depth_str}")
-        logging.info(
-            " | ".join(status_parts)
-        )
+        logging.info(" | ".join(status_parts))
 
         if self._logger:
             # Keep only whitelisted metadata before serializing the candidate.

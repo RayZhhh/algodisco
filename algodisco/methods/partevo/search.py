@@ -50,14 +50,6 @@ class PartEvoSearch(IterativeSearchBase):
     population initialization happens inside the iterative sampling loop.
     """
 
-    _EXCLUDED_LOG_KEYS = frozenset(
-        {
-            "accepted_by_population",
-            "accepted_by_tree",
-            "assigned_cluster_id",
-        }
-    )
-
     def __init__(
         self,
         config: PartEvoConfig,
@@ -135,32 +127,18 @@ class PartEvoSearch(IterativeSearchBase):
         except (TypeError, ValueError):
             return False
 
-    def _sanitize_log_value(self, value):
-        """Drop method-local runtime fields that should not enter logger outputs."""
-        if isinstance(value, dict):
-            return {
-                key: self._sanitize_log_value(item)
-                for key, item in value.items()
-                if key not in self._EXCLUDED_LOG_KEYS
-            }
-        if isinstance(value, list):
-            return [self._sanitize_log_value(item) for item in value]
-        if isinstance(value, tuple):
-            return tuple(self._sanitize_log_value(item) for item in value)
-        return value
-
     def _serialize_algo_for_logging(self, algo_proto: AlgoProto) -> dict:
         """Serialize one candidate using the method's metadata allowlist."""
         log_algo_proto = copy.deepcopy(algo_proto)
         log_algo_proto.keep_metadata_keys(self._config.keep_metadata_keys)
-        return self._sanitize_log_value(log_algo_proto.to_dict())
+        return log_algo_proto.to_dict()
 
     def _save_database(self, sample_num: int) -> None:
         """Persist the current database snapshot using the configured logger."""
         if not self._logger:
             return
 
-        database_dict = self._sanitize_log_value(self._database.to_dict())
+        database_dict = self._database.to_dict()
         database_dict["sample_num"] = sample_num
         database_dict["phase"] = self._phase
         self._logger.log_dict(database_dict, "database")
@@ -219,7 +197,7 @@ class PartEvoSearch(IterativeSearchBase):
 
             threads = []
             for _ in range(self._config.num_samplers):
-                thread = threading.Thread(target=self._generate_evaluate_register_loop)
+                thread = threading.Thread(target=self._bootstrap)
                 thread.start()
                 threads.append(thread)
 
@@ -515,7 +493,7 @@ class PartEvoSearch(IterativeSearchBase):
 
         return None
 
-    def _generate_evaluate_register_loop(self) -> None:
+    def _bootstrap(self) -> None:
         """Main lifecycle loop for a single PartEvo sampler thread."""
         while not self.is_stopped():
             with self._lock:

@@ -167,7 +167,7 @@ class ReEvoSearch(IterativeSearchBase):
 
             threads = []
             for _ in range(self._config.num_samplers):
-                thread = threading.Thread(target=self._generate_evaluate_register_loop)
+                thread = threading.Thread(target=self._bootstrap)
                 thread.start()
                 threads.append(thread)
 
@@ -434,7 +434,7 @@ class ReEvoSearch(IterativeSearchBase):
 
         return None
 
-    def _generate_evaluate_register_loop(self) -> None:
+    def _bootstrap(self) -> None:
         """Main lifecycle loop for one ReEvo sampler thread."""
         while not self.is_stopped():
             with self._lock:

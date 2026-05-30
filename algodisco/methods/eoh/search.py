@@ -143,7 +143,7 @@ class EoHSearch(IterativeSearchBase):
             # Start sampler threads
             threads = []
             for _ in range(self._config.num_samplers):
-                t = threading.Thread(target=self._generate_evaluate_register_loop)
+                t = threading.Thread(target=self._bootstrap)
                 t.start()
                 threads.append(t)
 
@@ -197,7 +197,7 @@ class EoHSearch(IterativeSearchBase):
         with self._lock:
             return self._get_top_k_algos_from_list(self._searched_algos, k)
 
-    def _generate_evaluate_register_loop(self):
+    def _bootstrap(self):
         """The main loop for a single sampler thread."""
         while not self.is_stopped():
             with self._lock:
