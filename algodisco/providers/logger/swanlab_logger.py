@@ -2,6 +2,7 @@
 # Licensed under the MIT license.
 
 import logging
+import os
 from os import PathLike
 from typing import Optional, Dict
 from .pickle_logger import BasePickleLogger
@@ -99,6 +100,12 @@ class BaseSwanLabLogger(BasePickleLogger):
         except ImportError:
             raise ImportError(
                 "SwanLab is not installed. Please install it with 'pip install swanlab'"
+            )
+
+        if self._api_key is None and os.environ.get("SWANLAB_API_KEY") is None:
+            logging.warning(
+                "SwanLab API key is not set. Provide api_key or set SWANLAB_API_KEY "
+                "if your SwanLab setup requires authentication."
             )
 
         if not self._lazy_init:
