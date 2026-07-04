@@ -14,7 +14,7 @@
 | `examples_per_prompt` | `int` | `2` | 提示词中的示例数量 |
 | `samples_per_prompt` | `int` | `4` | 每个提示词生成的样本数 |
 | `max_samples` | `int` | `1000` | 最大采样数 |
-| `llm_max_tokens` | `int` | `1024` | LLM 生成的最大 token 数 |
+| `llm_max_tokens` | `Optional[int]` | `null` | LLM 生成的最大 token 数 |
 | `llm_timeout_seconds` | `int` | `120` | LLM 调用超时时间 |
 
 ### 数据库参数
@@ -73,7 +73,7 @@
 
 ```yaml
 method:
-  template_program_path: "templates/max_value.py"
+  template_program_path: "templates/max_value.txt"
   task_description_path: "tasks/max_value.txt"
   language: "python"
   num_samplers: 4
@@ -81,7 +81,7 @@ method:
   examples_per_prompt: 2
   samples_per_prompt: 4
   max_samples: 500
-  llm_max_tokens: 1024
+  llm_max_tokens: null
   llm_timeout_seconds: 120
   db_num_islands: 10
   db_max_island_capacity: 50

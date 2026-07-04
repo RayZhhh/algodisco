@@ -8,7 +8,7 @@
 
 ## 1. 准备模板程序
 
-创建文件 `templates/sort.py`:
+创建文件 `templates/sort.txt`:
 
 ```python
 from typing import List
@@ -110,7 +110,7 @@ class SortEvaluator(Evaluator):
 
 ```yaml
 method:
-  template_program_path: "templates/sort.py"
+  template_program_path: "templates/sort.txt"
   task_description_path: "tasks/sort.txt"
   language: "python"
   diff_based_evolution: false

@@ -33,7 +33,7 @@ Common keys:
 | `examples_per_prompt` | Number of previous examples included in prompts |
 | `samples_per_prompt` | Number of candidates generated per prompt |
 | `max_samples` | Total number of candidates to generate |
-| `llm_max_tokens` | Maximum output tokens per LLM call |
+| `llm_max_tokens` | Maximum output tokens per LLM call (`null` = no limit, use model default) |
 | `llm_timeout_seconds` | Timeout for each LLM call |
 
 Additional keys such as `db_num_islands`, `db_reset_period`, and `keep_metadata_keys` are method-specific or logging-related.
@@ -192,6 +192,39 @@ logger:
     swanlab_logdir: "logs/my_swanlab_meta"
 ```
 
+## CLI Overrides
+
+Any YAML value can be overridden from the command line using OmegaConf syntax. The key path is dot-separated and matches the YAML structure:
+
+```bash
+# Override a single method parameter
+algodisco run funsearch --config config.yaml method.max_samples=50
+
+# Override multiple values
+algodisco run funsearch --config config.yaml \
+  method.max_samples=200 \
+  method.samples_per_prompt=4 \
+  llm.kwargs.model="gpt-4o"
+
+# Change the LLM provider
+algodisco run funsearch --config config.yaml \
+  llm.class_path="algodisco.providers.llm.claude_api.ClaudeAPI" \
+  llm.kwargs.model="claude-sonnet-4-20250514"
+
+# Enable debug mode for quick iteration
+algodisco run funsearch --config config.yaml \
+  method.debug_mode=true \
+  method.max_samples=5
+```
+
+This is especially useful for hyperparameter sweeps and model comparisons — no need to maintain separate config files for each variation.
+
+The same syntax works with the shell wrapper:
+
+```bash
+bash examples/run_online_bin_packing.sh funsearch method.max_samples=50
+```
+
 ## Environment Variables
 
 Use environment variables for secrets whenever possible:
@@ -224,7 +257,7 @@ method:
   examples_per_prompt: 2
   samples_per_prompt: 2
   max_samples: 100
-  llm_max_tokens: 1024
+  llm_max_tokens: null
   llm_timeout_seconds: 120
   db_num_islands: 5
   db_reset_period: 14400

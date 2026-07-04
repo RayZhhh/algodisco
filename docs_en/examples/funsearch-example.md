@@ -8,7 +8,7 @@
 
 ## 1. 准备模板程序
 
-创建文件 `templates/max_value.py`:
+创建文件 `templates/max_value.txt`:
 
 ```python
 from typing import List
@@ -111,7 +111,7 @@ class MaxValueEvaluator(Evaluator):
 
 ```yaml
 method:
-  template_program_path: "templates/max_value.py"
+  template_program_path: "templates/max_value.txt"
   task_description_path: "tasks/max_value.txt"
   language: "python"
   num_samplers: 4
@@ -119,7 +119,7 @@ method:
   examples_per_prompt: 2
   samples_per_prompt: 4
   max_samples: 200
-  llm_max_tokens: 1024
+  llm_max_tokens: null
   llm_timeout_seconds: 120
   db_num_islands: 10
   db_max_island_capacity: 20

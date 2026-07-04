@@ -62,13 +62,41 @@ logs/online_bin_packing_funsearch/
 
 After a successful run, you should see logged candidates and other search artifacts under that directory.
 
-## Step 5: Make a Small Change
+## Step 5: Make a Small Change (Without Editing Config Files)
 
-After the example runs once, change only one thing at a time:
+AlgoDisco supports **CLI overrides** via OmegaConf. You can override any YAML value directly from the command line:
 
-- Lower `max_samples` in `examples/online_bin_packing/configs/funsearch.yaml` for faster smoke tests
-- Switch the model in the `llm` section
-- Try another method such as `openevolve`, `mcts_ahd`, `partevo`, or `reevo`
+```bash
+# Quick smoke test: only 5 samples
+algodisco run funsearch --config examples/online_bin_packing/configs/funsearch.yaml \
+  method.max_samples=5
+
+# Try a different model
+algodisco run funsearch --config examples/online_bin_packing/configs/funsearch.yaml \
+  llm.kwargs.model="gpt-4o"
+
+# Combine multiple overrides
+algodisco run funsearch --config examples/online_bin_packing/configs/funsearch.yaml \
+  method.max_samples=50 \
+  method.samples_per_prompt=4 \
+  llm.kwargs.model="gpt-4o"
+```
+
+The override syntax is `key.subkey=value`, matching the YAML structure. This works with the shell wrapper too:
+
+```bash
+bash examples/run_online_bin_packing.sh funsearch method.max_samples=5
+```
+
+Alternatively, you can copy and edit the config file directly:
+
+```bash
+cp examples/online_bin_packing/configs/funsearch.yaml my_config.yaml
+# Edit my_config.yaml, then:
+algodisco run funsearch --config my_config.yaml
+```
+
+You can also try another method such as `openevolve`, `mcts_ahd`, `partevo`, or `reevo`.
 
 ## What the YAML Config Looks Like
 

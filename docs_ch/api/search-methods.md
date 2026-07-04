@@ -98,7 +98,7 @@ class OpenEvolveConfig:
     elite_selection_ratio: float = 0.1
     samples_per_prompt: int = 1
     max_samples: Optional[int] = 1000
-    llm_max_tokens: int = 1024
+    llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
     db_num_islands: int = 10
     db_reset_period: int = 4 * 60 * 60
@@ -146,7 +146,7 @@ class EoHConfig:
     num_samplers: int = 4
     num_evaluators: int = 4
     max_samples: Optional[int] = 1000
-    llm_max_tokens: int = 1024
+    llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
     db_save_frequency: int = 100
     init_samples_ratio: float = 2.0
@@ -189,7 +189,7 @@ class OnePlusOneEPSConfig:
     num_evaluators: int = 4
     samples_per_prompt: int = 4
     max_samples: Optional[int] = 1000
-    llm_max_tokens: int = 1024
+    llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
 ```
 
@@ -213,6 +213,6 @@ class RandSampleConfig:
     num_samplers: int = 1
     num_evaluators: int = 4
     max_samples: Optional[int] = 1000
-    llm_max_tokens: int = 1024
+    llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
 ```

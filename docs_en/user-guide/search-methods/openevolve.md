@@ -20,7 +20,7 @@
 | `elite_selection_ratio` | `float` | `0.1` | 精英选择比例 |
 | `samples_per_prompt` | `int` | `1` | 每个提示词生成的样本数 |
 | `max_samples` | `int` | `1000` | 最大采样数 |
-| `llm_max_tokens` | `int` | `1024` | LLM 生成的最大 token 数 |
+| `llm_max_tokens` | `Optional[int]` | `null` | LLM 生成的最大 token 数 |
 | `llm_timeout_seconds` | `int` | `120` | LLM 调用超时时间 |
 
 ### 数据库参数
@@ -63,7 +63,7 @@
 
 ```yaml
 method:
-  template_program_path: "templates/sort.py"
+  template_program_path: "templates/sort.txt"
   task_description_path: "tasks/sort.txt"
   language: "python"
   diff_based_evolution: false
@@ -148,7 +148,7 @@ class OpenEvolveConfig:
     elite_selection_ratio: float = 0.1
     samples_per_prompt: int = 1
     max_samples: Optional[int] = 1000
-    llm_max_tokens: int = 1024
+    llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
     db_num_islands: int = 10
     db_reset_period: int = 4 * 60 * 60

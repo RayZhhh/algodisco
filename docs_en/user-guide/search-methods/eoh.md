@@ -17,7 +17,7 @@
 | `num_samplers` | `int` | `4` | 并行采样线程数 |
 | `num_evaluators` | `int` | `4` | 并行评估线程数 |
 | `max_samples` | `int` | `1000` | 最大采样数 |
-| `llm_max_tokens` | `int` | `1024` | LLM 生成的最大 token 数 |
+| `llm_max_tokens` | `Optional[int]` | `null` | LLM 生成的最大 token 数 |
 | `llm_timeout_seconds` | `int` | `120` | LLM 调用超时时间 |
 | `init_samples_ratio` | `float` | `2.0` | 初始样本比例 |
 | `db_save_frequency` | `int` | `100` | 数据库保存频率 |
@@ -54,7 +54,7 @@
 
 ```yaml
 method:
-  template_program_path: "templates/binary_search.py"
+  template_program_path: "templates/binary_search.txt"
   task_description_path: "tasks/binary_search.txt"
   language: "python"
   pop_size: 10
@@ -65,7 +65,7 @@ method:
   num_samplers: 4
   num_evaluators: 4
   max_samples: 500
-  llm_max_tokens: 2048
+  llm_max_tokens: null
   init_samples_ratio: 2.0
 
 llm:
@@ -133,7 +133,7 @@ class EoHConfig:
     num_samplers: int = 4
     num_evaluators: int = 4
     max_samples: Optional[int] = 1000
-    llm_max_tokens: int = 1024
+    llm_max_tokens: Optional[int] = None
     llm_timeout_seconds: int = 120
     db_save_frequency: int = 100
     init_samples_ratio: float = 2.0

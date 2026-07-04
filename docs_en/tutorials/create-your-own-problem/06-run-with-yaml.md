@@ -43,7 +43,7 @@ method:
   examples_per_prompt: 2
   samples_per_prompt: 2
   max_samples: 100
-  llm_max_tokens: 1024
+  llm_max_tokens: null
   llm_timeout_seconds: 120
   db_num_islands: 5
 
@@ -68,6 +68,33 @@ logger:
 
 ```bash
 algodisco run funsearch --config config.yaml
+```
+
+## CLI Overrides
+
+You can override any YAML value from the command line without editing the file:
+
+```bash
+# Override a single value
+algodisco run funsearch --config config.yaml method.max_samples=50
+
+# Override multiple values
+algodisco run funsearch --config config.yaml \
+  method.max_samples=200 \
+  method.num_samplers=4 \
+  llm.kwargs.model="gpt-4o"
+```
+
+The syntax is `key.subkey=value`, where the key path matches the YAML structure. This is useful for:
+
+- Running quick smoke tests (`method.max_samples=5`)
+- Comparing models (`llm.kwargs.model="gpt-4o"`)
+- Adjusting parallelism (`method.num_samplers=4`, `method.num_evaluators=4`)
+
+The same syntax works with the shell wrapper:
+
+```bash
+bash examples/run_online_bin_packing.sh funsearch method.max_samples=50
 ```
 
 ## Reusing the Bundled Example

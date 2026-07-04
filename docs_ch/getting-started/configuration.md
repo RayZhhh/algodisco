@@ -91,7 +91,7 @@ method:
   num_samplers: auto
   num_evaluators: auto
   max_samples: 100
-  llm_max_tokens: 1024
+  llm_max_tokens: null
   llm_timeout_seconds: 120
 
 llm:
