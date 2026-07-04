@@ -157,7 +157,7 @@ class BaseWandbLogger(BasePickleLogger):
         log_items["num_valid_functions"] = self._valid_functions_num
         log_items["num_invalid_functions"] = self._invalid_functions_num
 
-        return log_items
+        return {f"algo-search/{k}": v for k, v in log_items.items()}
 
     def _pre_log_hook(self, log_item: Dict, item_name: str, *, count: int, step: int):
         """Logs metrics to wandb before caching."""

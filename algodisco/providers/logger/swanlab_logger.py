@@ -11,63 +11,6 @@ from .pickle_logger import BasePickleLogger
 class BaseSwanLabLogger(BasePickleLogger):
     """A base Pickle logger that also logs common metrics to SwanLab."""
 
-    def _init_swanlab(self):
-        import swanlab
-
-        if self._initialized:
-            return
-
-        existing_run = swanlab.get_run()
-        if existing_run is not None:
-            logging.warning(
-                "SwanLab has already been initialized; BaseSwanLabLogger will reuse the existing run."
-            )
-            self._swanlab_run = existing_run
-            self._owns_swanlab_run = False
-            self._initialized = True
-            return
-
-        if self._api_key:
-            swanlab.login(self._api_key)
-
-        swanlab_init_kwargs = {
-            "project": self._project_name,
-            "experiment_name": self._experiment_name,
-            "group": self._group,
-            "config": self._config,
-        }
-
-        # Use the explicit SwanLab logdir when provided, otherwise fall back
-        # to the pickle logger directory.
-        swanlab_logdir = (
-            self._swanlab_logdir
-            if self._swanlab_logdir is not None
-            else self._logdir
-        )
-        if swanlab_logdir is not None:
-            swanlab_init_kwargs["logdir"] = str(swanlab_logdir)
-
-        swanlab_init_kwargs = {
-            k: v for k, v in swanlab_init_kwargs.items() if v is not None
-        }
-
-        self._swanlab_run = swanlab.init(**swanlab_init_kwargs)
-        if not self._swanlab_run:
-
-            class DummyLogger:
-                def log(self, *args, **kwargs):
-                    pass
-
-                def finish(self, *args, **kwargs):
-                    pass
-
-            self._swanlab_run = DummyLogger()
-            self._owns_swanlab_run = False
-        else:
-            self._owns_swanlab_run = True
-
-        self._initialized = True
-
     def __init__(
         self,
         logdir: PathLike | str,
@@ -119,21 +62,69 @@ class BaseSwanLabLogger(BasePickleLogger):
         self._valid_functions_num = 0
         self._invalid_functions_num = 0
 
-    def _prepare_swanlab_log_items(
-        self, log_dict: dict, item_name: str
-    ) -> Optional[dict]:
-        """Prepare SwanLab metrics for per-algorithm search logs."""
-        # Database snapshots are still written to pickle by the base logger,
-        # but they should not share the same SwanLab metric names/steps.
-        if item_name != "algo":
-            return None
+    def _init_swanlab(self):
+        import swanlab
 
+        if self._initialized:
+            return
+
+        existing_run = swanlab.get_run()
+        if existing_run is not None:
+            logging.warning(
+                "SwanLab has already been initialized; BaseSwanLabLogger will reuse the existing run."
+            )
+            self._swanlab_run = existing_run
+            self._owns_swanlab_run = False
+            self._initialized = True
+            return
+
+        if self._api_key:
+            swanlab.login(self._api_key)
+
+        swanlab_init_kwargs = {
+            "project": self._project_name,
+            "experiment_name": self._experiment_name,
+            "group": self._group,
+            "config": self._config,
+        }
+
+        # Use the explicit SwanLab logdir when provided, otherwise fall back
+        # to the pickle logger directory.
+        swanlab_logdir = (
+            self._swanlab_logdir if self._swanlab_logdir is not None else self._logdir
+        )
+        if swanlab_logdir is not None:
+            swanlab_init_kwargs["logdir"] = str(swanlab_logdir)
+
+        swanlab_init_kwargs = {
+            k: v for k, v in swanlab_init_kwargs.items() if v is not None
+        }
+
+        self._swanlab_run = swanlab.init(**swanlab_init_kwargs)
+        if not self._swanlab_run:
+
+            class DummyLogger:
+                def log(self, *args, **kwargs):
+                    pass
+
+                def finish(self, *args, **kwargs):
+                    pass
+
+            self._swanlab_run = DummyLogger()
+            self._owns_swanlab_run = False
+        else:
+            self._owns_swanlab_run = True
+
+        self._initialized = True
+
+    def _prepare_swanlab_log_items(self, log_dict: dict) -> dict:
+        """Prepares a dictionary of common items to log to SwanLab."""
         if not self._initialized:
             self._init_swanlab()
 
         log_items = {}
 
-        # 1. Update state with the current sample's data
+        # 1. Update state with the current sample's data.
         score = log_dict.get("score")
         if score is not None:
             self._valid_functions_num += 1
@@ -150,7 +141,7 @@ class BaseSwanLabLogger(BasePickleLogger):
         if "execution_time" in log_dict:
             self._cumulative_execution_time += log_dict["execution_time"]
 
-        # 2. Prepare items for SwanLab logging
+        # 2. Prepare items for SwanLab logging.
         if self._best_score > -float("inf"):
             log_items["best_score"] = self._best_score
 
@@ -164,7 +155,7 @@ class BaseSwanLabLogger(BasePickleLogger):
         log_items["cumulative_eval_time"] = self._cumulative_eval_time
         log_items["cumulative_execution_time"] = self._cumulative_execution_time
 
-        # Log other numeric values from the original log_dict
+        # Log other numeric values from the original log_dict.
         for k, v in log_dict.items():
             if isinstance(v, (int, float)):
                 log_items[k] = v
@@ -172,18 +163,15 @@ class BaseSwanLabLogger(BasePickleLogger):
         log_items["num_valid_functions"] = self._valid_functions_num
         log_items["num_invalid_functions"] = self._invalid_functions_num
 
-        return log_items
+        # Add "algo-search/" log group label.
+        return {f"algo-search/{k}": v for k, v in log_items.items()}
 
     def _pre_log_hook(self, log_item: Dict, item_name: str, *, count: int, step: int):
         """Logs metrics to swanlab before caching."""
-        log_items = self._prepare_swanlab_log_items(log_item, item_name)
-        if not log_items:
-            return
+        if not self._initialized:
+            self._init_swanlab()
 
-        sample_num = log_item.get("sample_num")
-        if isinstance(sample_num, (int, float)):
-            step = int(sample_num)
-
+        log_items = self._prepare_swanlab_log_items(log_item)
         self._swanlab_run.log(log_items, step=step)
 
     def finish(self):
