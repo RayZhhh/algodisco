@@ -8,7 +8,7 @@ method:
   num_evaluators: auto
   idea_prompt: false
   max_samples: 100
-  llm_max_tokens: 1024
+  llm_max_tokens: null
   llm_timeout_seconds: 120
   keep_metadata_keys: ["sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
   debug_mode: false

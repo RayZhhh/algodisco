@@ -1,63 +1,165 @@
 method:
-  template_program_path: "path/to/template.py"
+
+  # Path to the template algorithm source code file, read at runtime as the seed algorithm
+  template_program_path: "path/to/template.txt"
+
+  # Path to a natural-language task description file, injected into every LLM prompt
   task_description_path: "path/to/task_description.txt"
+
+  # Programming language of generated algorithms, used to extract code blocks from LLM responses
   language: "python"
+
+  # Whether to use idea-oriented prompting; when true, LLM articulates an improvement idea before writing code
   idea_prompt: false
+
+  # When true, LLM produces SEARCH/REPLACE diff blocks instead of full program rewrites
   diff_based_evolution: false
+
+  # Number of top-performing programs (from the same island) included in the prompt as context
   num_top_programs: 1
+
+  # Number of diverse/inspiration programs included in the prompt to encourage diversity
   num_diverse_programs: 1
+
+  # Whether to include execution logs and error messages from previous evaluations in prompts
   include_artifacts: false
+
+  # Optional directory containing prompt template files; null uses built-in defaults
   template_dir: null
+
+  # Template key for the main sampler system prompt
   system_message: "system_message"
+
+  # Template key for the evaluator system prompt
   evaluator_system_message: "evaluator_system_message"
+
+  # Whether to randomize among configured template variations for each prompt
   use_template_stochasticity: true
+
+  # Mapping of template slot names to lists of alternative prompt strings
   template_variations: {}
+
+  # Maximum size (bytes) of artifact payload included in prompts; artifacts are truncated to this size
   max_artifact_bytes: 20480
+
+  # Whether to sanitize artifacts before injecting them into prompts (strips dangerous content)
   artifact_security_filter: true
+
+  # Character threshold for asking the model to simplify its output when the parent program is too long
   suggest_simplification_after_chars: 500
+
+  # Character threshold for including explicit change summaries in the prompt for short responses
   include_changes_under_chars: 100
+
+  # Line threshold for classifying implementations as "concise" (fewer lines than this)
   concise_implementation_max_lines: 10
+
+  # Line threshold for classifying implementations as "comprehensive" (more lines than this)
   comprehensive_implementation_min_lines: 50
+
+  # Maximum line length when summarizing diffs; longer lines are truncated
   diff_summary_max_line_len: 100
+
+  # Maximum number of lines included in diff summaries
   diff_summary_max_lines: 30
+
+  # Number of concurrent sampler threads; "auto" resolves to max(1, cpu_count // 2)
   num_samplers: auto
+
+  # Max concurrent evaluator calls; "auto" resolves to max(1, cpu_count // 4), gated by semaphore
   num_evaluators: auto
+
+  # Fraction of sampling budget allocated to exploration (diverse/less-explored regions)
   exploration_ratio: 0.2
+
+  # Fraction of sampling budget allocated to exploitation (top-performing regions)
   exploitation_ratio: 0.7
+
+  # Fraction of selections reserved for elite (best-performing) programs
   elite_selection_ratio: 0.1
+
+  # Number of candidate programs requested from the LLM per single prompt construction
   samples_per_prompt: 1
+
+  # Total number of evaluated candidate samples before the search terminates
   max_samples: 1000
-  llm_max_tokens: 1024
+
+  # Maximum number of tokens the LLM generates in a single response
+  llm_max_tokens: null
+
+  # Timeout in seconds for each LLM API call
   llm_timeout_seconds: 120
+
+  # Number of islands (sub-populations) in the program database
   db_num_islands: 10
+
+  # Period in seconds for island reset/rebalancing (14400 = 4 hours)
   db_reset_period: 14400
+
+  # Save a full database snapshot every this many evaluated samples
   db_save_frequency: 100
+
+  # Feature dimensions used to index the MAP-Elites archive (e.g., complexity, diversity)
   feature_dimensions:
     - "complexity"
     - "diversity"
+
+  # Number of bins per feature dimension in the MAP-Elites archive
   feature_bins: 10
+
+  # Complexity metric mode: "code_length" (character count) or "ast" (AST-based complexity)
   complexity_mode: "code_length"
+
+  # Size of the reference set used for diversity calculation
   diversity_reference_size: 20
+
+  # Maximum number of elites retained in the MAP-Elites archive
   archive_size: 100
+
+  # Optional cap on live population size; null means no explicit cap
   population_size: null
+
+  # Number of samples between migration events across islands
   migration_interval: 50
+
+  # Fraction of population migrated during a migration event
   migration_rate: 0.1
+
+  # Allowlist of metadata keys retained on each algorithm before serialization for logging
   keep_metadata_keys: ["idea", "sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
+
+  # Debug mode: when true, sampler thread errors are logged at ERROR level
   debug_mode: false
+
+  # Debug crash mode (requires debug_mode=true): any sampler error terminates the search immediately
   debug_mode_crash: false
 
 llm:
+
+  # Python class path of the LLM provider
   class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
   kwargs:
+    # Model name to use
     model: "gpt-3.5-turbo"
+
+    # API key for authentication
     api_key: "your-api-key"
+
+    # Base URL of the API endpoint
     base_url: "https://api.openai.com/v1"
 
 evaluator:
+
+  # Python class path of the evaluator (module path or file_path:ClassName)
   class_path: "path/to/evaluator.py:YourEvaluator"
+
+  # Keyword arguments passed to the evaluator constructor
   kwargs: {}
 
 logger:
+
+  # Python class path of the Pickle logger
   class_path: "algodisco.providers.logger.pickle_logger.BasePickleLogger"
   kwargs:
+    # Directory for storing pickle log files; each item type gets its own subdirectory
     logdir: "logs/openevolve_log"

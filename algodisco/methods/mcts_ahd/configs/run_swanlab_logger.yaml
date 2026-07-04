@@ -1,51 +1,133 @@
 method:
-  template_program_path: "path/to/template.py"
+
+  # Path to the template algorithm source code file, read at runtime as the seed algorithm
+  template_program_path: "path/to/template.txt"
+
+  # Path to a natural-language task description file, injected into every LLM prompt
   task_description_path: "path/to/task_description.txt"
+
+  # Programming language of generated algorithms, used to extract code blocks from LLM responses
   language: "python"
+
+  # Target population size maintained by the database; "auto" resolves based on max_samples thresholds
   pop_size: 10
+
+  # Number of accepted solutions before transitioning from initialization to main search phase; "auto" resolves to pop_size
   init_pop_size: auto
+
+  # Number of parents selected from the population for multi-parent operators
   selection_num: 2
+
+  # MCTS branching-growth exponent; larger values encourage wider branching
   alpha: 0.5
+
+  # Base exploration coefficient for the UCT score formula; higher values increase exploration of less-visited nodes
   lambda_0: 0.1
+
+  # Maximum depth of the MCTS tree during traversal; descent stops at this depth
   max_tree_depth: 10
+
+  # Hard cap multiplier for initialization attempts; effective budget = init_trial_multiplier * init_pop_size
   init_trial_multiplier: 10
+
+  # Number of retries when an operator produces invalid/duplicate candidates at a tree node
   expansion_retry_limit: 3
+
+  # Whether to enable the e2 crossover operator (crossover of two parents)
   use_e2_operator: true
+
+  # Whether to enable the m1 mutation operator (single-point mutation of one parent)
   use_m1_operator: true
+
+  # Whether to enable the m2 mutation operator (different mutation strategy from m1)
   use_m2_operator: true
+
+  # Whether to enable the s1 path-synthesis operator (synthesizes improvements from the full tree path)
   use_s1_operator: true
+
+  # Number of e1 expansions scheduled per iteration at the selected node (0 disables e1)
   e1_weight: 0
+
+  # Number of e2 expansions scheduled per iteration at the selected node
   e2_weight: 1
+
+  # Number of m1 expansions scheduled per iteration at the selected node
   m1_weight: 2
+
+  # Number of m2 expansions scheduled per iteration at the selected node
   m2_weight: 2
+
+  # Number of s1 expansions scheduled per iteration at the selected node
   s1_weight: 1
+
+  # Number of concurrent sampler threads; "auto" resolves to max(1, cpu_count // 2)
   num_samplers: auto
+
+  # Max concurrent evaluator calls; "auto" resolves to max(1, cpu_count // 4), gated by semaphore
   num_evaluators: auto
+
+  # Total number of evaluated candidate samples before the search terminates
   max_samples: 1000
-  llm_max_tokens: 1024
+
+  # Maximum number of tokens the LLM generates in a single response
+  llm_max_tokens: null
+
+  # Timeout in seconds for each LLM API call
   llm_timeout_seconds: 120
+
+  # Save a full database snapshot every this many evaluated samples
   db_save_frequency: 100
+
+  # Allowlist of metadata keys retained on each algorithm before serialization for logging
   keep_metadata_keys: ["idea", "phase", "tree_depth", "sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]
+
+  # Debug mode: when true, sampler thread errors are logged at ERROR level
   debug_mode: false
+
+  # Debug crash mode (requires debug_mode=true): any sampler error terminates the search immediately
   debug_mode_crash: false
 
 llm:
+
+  # Python class path of the LLM provider
   class_path: "algodisco.providers.llm.openai_api.OpenAIAPI"
   kwargs:
+    # Model name to use
     model: "gpt-3.5-turbo"
+
+    # API key for authentication
     api_key: "your-api-key"
+
+    # Base URL of the API endpoint
     base_url: "https://api.openai.com/v1"
 
 evaluator:
+
+  # Python class path of the evaluator (module path or file_path:ClassName)
   class_path: "path/to/evaluator.py:YourEvaluator"
+
+  # Keyword arguments passed to the evaluator constructor
   kwargs: {}
 
 logger:
+
+  # Python class path of the SwanLab logger, extends Pickle logger with SwanLab experiment tracking
   class_path: "algodisco.providers.logger.swanlab_logger.BaseSwanLabLogger"
   kwargs:
+    # Directory for storing pickle log files
     logdir: "logs/mcts_ahd_log"
+
+    # SwanLab project name
     project: "your-swanlab-project"
+
+    # Name for this specific experiment run
     experiment_name: "mcts_ahd-run"
+
+    # Group name for organizing related runs
     group: "mcts_ahd"
+
+    # Separate directory for SwanLab's own log files; falls back to logdir if not set
     swanlab_logdir: "logs/mcts_ahd_log/swanlab"
+
+    # SwanLab API key; when null, uses the SWANLAB_API_KEY environment variable
     api_key: null

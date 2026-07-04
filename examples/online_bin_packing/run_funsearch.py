@@ -74,7 +74,7 @@ def main():
         examples_per_prompt=2,
         samples_per_prompt=2,
         max_samples=100,
-        llm_max_tokens=1024,
+        llm_max_tokens=None,
         llm_timeout_seconds=120,
         db_num_islands=5,
     )

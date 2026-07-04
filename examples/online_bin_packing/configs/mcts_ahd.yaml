@@ -24,7 +24,7 @@ method:
   num_samplers: auto
   num_evaluators: auto
   max_samples: 100
-  llm_max_tokens: 1024
+  llm_max_tokens: null
   llm_timeout_seconds: 120
   db_save_frequency: 50
   keep_metadata_keys: ["idea", "phase", "tree_depth", "sample_time", "eval_time", "execution_time", "error_msg", "prompt", "response_text"]

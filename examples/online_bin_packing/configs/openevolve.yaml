@@ -28,7 +28,7 @@ method:
   elite_selection_ratio: 0.1
   samples_per_prompt: 1
   max_samples: 100
-  llm_max_tokens: 1024
+  llm_max_tokens: null
   llm_timeout_seconds: 120
   db_num_islands: 5
   db_reset_period: 14400
