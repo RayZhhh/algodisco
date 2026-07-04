@@ -318,24 +318,26 @@ class MoonLanderEvaluator(Evaluator):
 
         result: dict[str, Any] = {
             "score": nws,
-            "nws": nws,
-            "mean_reward": mean_reward,
-            "mean_fuel": mean_fuel,
-            "success_rate": success_rate,
-            "per_instance": per_instance,
-            "all_ins_performance": instance_performance,
-            "list_performance": list_performance,
+            "metadata": {
+                "nws": nws,
+                "mean_reward": mean_reward,
+                "mean_fuel": mean_fuel,
+                "success_rate": success_rate,
+                "per_instance": per_instance,
+                "all_ins_performance": instance_performance,
+                "list_performance": list_performance,
+            },
         }
 
         if image_canvas_by_instance:
             worst_instance_id = min(rewards, key=rewards.get)
             worst_infos = per_instance[worst_instance_id]
-            result["image"] = self._create_base64(
+            result["metadata"]["image"] = self._create_base64(
                 canvas=image_canvas_by_instance[worst_instance_id],
                 score=nws,
                 infos=worst_infos,
             )
-            result["observation"] = str(worst_infos.get("observations"))
+            result["metadata"]["observation"] = str(worst_infos.get("observations"))
 
         if self.whocall == "mles":
             result["Test result"] = {
@@ -383,11 +385,12 @@ def main() -> None:
     print("Moon Lander Template Evaluation")
     print(f"instances: {len(evaluator.instance_set)}")
     print(f"score: {result['score']}")
-    print(f"mean_reward: {result.get('mean_reward')}")
-    print(f"mean_fuel: {result.get('mean_fuel')}")
-    print(f"success_rate: {result.get('success_rate')}")
-    print(f"execution_time: {result.get('execution_time')}")
-    print(f"error_msg: {result.get('error_msg')}")
+    metadata = result.get("metadata", {})
+    print(f"mean_reward: {metadata.get('mean_reward')}")
+    print(f"mean_fuel: {metadata.get('mean_fuel')}")
+    print(f"success_rate: {metadata.get('success_rate')}")
+    print(f"execution_time: {metadata.get('execution_time')}")
+    print(f"error_msg: {metadata.get('error_msg')}")
 
 
 if __name__ == "__main__":

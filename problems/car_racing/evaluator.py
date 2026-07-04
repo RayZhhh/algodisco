@@ -266,16 +266,18 @@ class CarRacingEvaluator(Evaluator):
 
         result: dict[str, Any] = {
             "score": mean_track_coverage,
-            "mean_track_coverage": mean_track_coverage,
-            "mean_episode_reward": mean_episode_reward,
-            "per_instance": per_instance,
-            "all_ins_performance": instance_performance,
-            "list_performance": list_performance,
+            "metadata": {
+                "mean_track_coverage": mean_track_coverage,
+                "mean_episode_reward": mean_episode_reward,
+                "per_instance": per_instance,
+                "all_ins_performance": instance_performance,
+                "list_performance": list_performance,
+            },
         }
 
         if image_by_instance:
             worst_instance_id = min(coverages, key=coverages.get)
-            result["image"] = image_by_instance[worst_instance_id]
+            result["metadata"]["image"] = image_by_instance[worst_instance_id]
 
         if self.whocall == "mles":
             result["Test result"] = per_instance
@@ -437,10 +439,11 @@ def main() -> None:
     print("Car Racing Template Evaluation")
     print(f"instances: {len(evaluator.instance_set)}")
     print(f"score: {result['score']}")
-    print(f"mean_track_coverage: {result.get('mean_track_coverage')}")
-    print(f"mean_episode_reward: {result.get('mean_episode_reward')}")
-    print(f"execution_time: {result.get('execution_time')}")
-    print(f"error_msg: {result.get('error_msg')}")
+    metadata = result.get("metadata", {})
+    print(f"mean_track_coverage: {metadata.get('mean_track_coverage')}")
+    print(f"mean_episode_reward: {metadata.get('mean_episode_reward')}")
+    print(f"execution_time: {metadata.get('execution_time')}")
+    print(f"error_msg: {metadata.get('error_msg')}")
 
 
 if __name__ == "__main__":

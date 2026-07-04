@@ -190,28 +190,40 @@ def sandbox_run(
             # Create a new dict to hold the results, starting with the actual result if exists
             if result["result"] is not None:
                 actual_result = result["result"]
-                # If the result is not a dict, wrap it in a dict
+                # If the result is not a dict, wrap it as {score: value}
                 if isinstance(actual_result, dict):
                     final_results = actual_result
                 else:
-                    final_results = {"result": actual_result}
+                    final_results = {"score": actual_result}
             else:
                 final_results = {}
 
-            # Always provide stable defaults for the shared evaluator fields so
-            # downstream code does not need to defensively check for missing
-            # keys on every evaluation result.
+            # Ensure a metadata dict exists — all non-score keys live here.
+            if "metadata" not in final_results or not isinstance(
+                final_results.get("metadata"), dict
+            ):
+                final_results["metadata"] = {}
+
+            # Move any extra top-level keys (besides score and metadata) into
+            # metadata so the result always conforms to {score, metadata}.
+            metadata = final_results["metadata"]
+            for key in list(final_results.keys()):
+                if key not in ("score", "metadata"):
+                    metadata[key] = final_results.pop(key)
+
+            # Inject execution_time and error_msg into metadata so downstream
+            # code reads them from a single, predictable location.
             if add_execution_time_in_res_dict:
                 execution_time = result.get("execution_time", 0.0)
                 if execution_time is None:
                     execution_time = 0.0
-                final_results.update({"execution_time": float(execution_time)})
+                metadata["execution_time"] = float(execution_time)
 
             if add_error_msg_in_res_dict:
                 error_msg = result.get("error_msg", "")
                 if error_msg is None:
                     error_msg = ""
-                final_results.update({"error_msg": str(error_msg)})
+                metadata["error_msg"] = str(error_msg)
 
             return final_results
 

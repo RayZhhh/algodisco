@@ -165,7 +165,7 @@ class AdmissibleSetEvaluator(Evaluator):
             - self.Optimal_Set_Length[f"n{self.dimension}w{self.weight}"]
         )
 
-        return {"score": score, "behavior": behavior}
+        return {"score": score, "metadata": {"behavior": behavior}}
 
 
 def main() -> None:
@@ -179,9 +179,10 @@ def main() -> None:
     # exposing enough information to confirm that evaluation succeeded.
     print("Admissible Set Template Evaluation")
     print(f"score: {result['score']}")
-    print(f"behavior_length: {len(result['behavior'])}")
-    print(f"execution_time: {result.get('execution_time')}")
-    print(f"error_msg: {result.get('error_msg')}")
+    metadata = result.get("metadata", {})
+    print(f"behavior_length: {len(metadata.get('behavior', []))}")
+    print(f"execution_time: {metadata.get('execution_time')}")
+    print(f"error_msg: {metadata.get('error_msg')}")
 
 
 if __name__ == "__main__":

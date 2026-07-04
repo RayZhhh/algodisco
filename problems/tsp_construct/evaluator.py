@@ -128,7 +128,7 @@ class TSPConstructEvaluator(Evaluator):
         score, per_instance = self._evaluate_callable(select_next_node)
         return {
             "score": score,
-            "per_instance": per_instance,
+            "metadata": {"per_instance": per_instance},
         }
 
 
@@ -143,8 +143,9 @@ def main() -> None:
     print(f"instances: {evaluator.n_instances}")
     print(f"problem_size: {evaluator.problem_size}")
     print(f"score: {result['score']}")
-    print(f"execution_time: {result.get('execution_time')}")
-    print(f"error_msg: {result.get('error_msg')}")
+    metadata = result.get("metadata", {})
+    print(f"execution_time: {metadata.get('execution_time')}")
+    print(f"error_msg: {metadata.get('error_msg')}")
 
 
 if __name__ == "__main__":

@@ -105,8 +105,9 @@ def main() -> None:
     print("Online Bin Packing Template Evaluation")
     print(f"instances: {len(evaluator.instances)}")
     print(f"score: {result['score']}")
-    print(f"execution_time: {result.get('execution_time')}")
-    print(f"error_msg: {result.get('error_msg')}")
+    metadata = result.get("metadata", {})
+    print(f"execution_time: {metadata.get('execution_time')}")
+    print(f"error_msg: {metadata.get('error_msg')}")
 
 
 if __name__ == "__main__":

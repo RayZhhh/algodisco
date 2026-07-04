@@ -102,14 +102,14 @@ class CirclePackingEvaluator(Evaluator):
             if not shape_is_valid:
                 return {
                     "score": 0.0,
-                    "behavior": behavior,
+                    "metadata": {"behavior": behavior},
                 }
 
             packing_is_valid = validate_packing(centers_array, radii_array)
             if not packing_is_valid:
                 return {
                     "score": 0.0,
-                    "behavior": behavior,
+                    "metadata": {"behavior": behavior},
                 }
 
             # Use the actual sum derived from radii as the score. The
@@ -119,14 +119,14 @@ class CirclePackingEvaluator(Evaluator):
             actual_sum = float(np.sum(radii_array))
             return {
                 "score": actual_sum,
-                "behavior": behavior,
+                "metadata": {"behavior": behavior},
             }
         except Exception:
             # Always return the required keys even when candidate execution
             # fails. The sandbox decorator will append `error_msg` separately.
             return {
                 "score": 0.0,
-                "behavior": [],
+                "metadata": {"behavior": []},
             }
 
 
@@ -139,9 +139,10 @@ def main() -> None:
 
     print("Circle Packing Template Evaluation")
     print(f"score: {result.get('score')}")
-    print(f"num_centers: {len(result.get('behavior', []))}")
-    print(f"execution_time: {result.get('execution_time')}")
-    print(f"error_msg: {result.get('error_msg')}")
+    metadata = result.get("metadata", {})
+    print(f"num_centers: {len(metadata.get('behavior', []))}")
+    print(f"execution_time: {metadata.get('execution_time')}")
+    print(f"error_msg: {metadata.get('error_msg')}")
 
 
 if __name__ == "__main__":

@@ -323,12 +323,9 @@ class FunSearch(IterativeSearchBase):
                 results = self._evaluator.evaluate_program(candidate.program)
 
         if results:
-            # Always record execution_time and error_msg if available
-            if "execution_time" in results:
-                candidate["execution_time"] = results["execution_time"]
-            if "error_msg" in results:
-                candidate["error_msg"] = results["error_msg"]
-            # Record score if available
+            metadata = results.get("metadata", {})
+            candidate["execution_time"] = metadata.get("execution_time", 0.0)
+            candidate["error_msg"] = metadata.get("error_msg", "")
             if results.get("score") is not None:
                 candidate.score = results["score"]
 

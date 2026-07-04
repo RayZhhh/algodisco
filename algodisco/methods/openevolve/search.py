@@ -131,10 +131,9 @@ class OpenEvolve(IterativeSearchBase):
 
         # Handle results dict or object
         if isinstance(results, dict):
-            if "execution_time" in results:
-                template_proto["execution_time"] = results["execution_time"]
-            if "error_msg" in results:
-                template_proto["error_msg"] = results["error_msg"]
+            metadata = results.get("metadata", {})
+            template_proto["execution_time"] = metadata.get("execution_time", 0.0)
+            template_proto["error_msg"] = metadata.get("error_msg", "")
             template_proto["metrics"] = results
             template_proto["evaluator_score"] = results.get("score")
             template_proto["fitness_score"] = get_fitness_score(
@@ -143,7 +142,7 @@ class OpenEvolve(IterativeSearchBase):
             template_proto.score = results.get("score")
         else:
             template_proto.score = results
-            template_proto["metrics"] = {"score": results}
+            template_proto["metrics"] = {"score": results, "metadata": {}}
             template_proto["fitness_score"] = results
 
         if not self._database.is_searchable_program(template_proto):
@@ -493,12 +492,10 @@ class OpenEvolve(IterativeSearchBase):
                 results = self._evaluator.evaluate_program(candidate.program)
 
         if results is not None:
-            # Always record execution_time and error_msg if available
             if isinstance(results, dict):
-                if "execution_time" in results:
-                    candidate["execution_time"] = results["execution_time"]
-                if "error_msg" in results:
-                    candidate["error_msg"] = results["error_msg"]
+                metadata = results.get("metadata", {})
+                candidate["execution_time"] = metadata.get("execution_time", 0.0)
+                candidate["error_msg"] = metadata.get("error_msg", "")
                 candidate["metrics"] = results
                 candidate["parent_metrics"] = (
                     candidate.get("parents")[0].get("metrics", {})
@@ -509,12 +506,10 @@ class OpenEvolve(IterativeSearchBase):
                 candidate["fitness_score"] = get_fitness_score(
                     results, self._config.feature_dimensions
                 )
-                # Preserve both names even though OpenEvolve currently treats
-                # fitness as the evaluator score.
                 candidate.score = results.get("score")
             else:
                 candidate.score = results
-                candidate["metrics"] = {"score": results}
+                candidate["metrics"] = {"score": results, "metadata": {}}
                 candidate["fitness_score"] = results
 
         # Parent code is only needed until extraction/evaluation is complete.

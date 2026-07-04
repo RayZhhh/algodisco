@@ -141,10 +141,9 @@ class ReEvoSearch(IterativeSearchBase):
             results = self._evaluator.evaluate_program(template_proto.program)
 
         if results is not None:
-            if "execution_time" in results:
-                template_proto["execution_time"] = results["execution_time"]
-            if "error_msg" in results:
-                template_proto["error_msg"] = results["error_msg"]
+            metadata = results.get("metadata", {})
+            template_proto["execution_time"] = metadata.get("execution_time", 0.0)
+            template_proto["error_msg"] = metadata.get("error_msg", "")
             if results.get("score") is not None:
                 template_proto.score = results["score"]
 
@@ -511,10 +510,9 @@ class ReEvoSearch(IterativeSearchBase):
                 results = self._evaluator.evaluate_program(candidate.program)
 
         if results is not None:
-            if "execution_time" in results:
-                candidate["execution_time"] = results["execution_time"]
-            if "error_msg" in results:
-                candidate["error_msg"] = results["error_msg"]
+            metadata = results.get("metadata", {})
+            candidate["execution_time"] = metadata.get("execution_time", 0.0)
+            candidate["error_msg"] = metadata.get("error_msg", "")
             if results.get("score") is not None:
                 candidate.score = results["score"]
         return candidate

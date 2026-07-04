@@ -32,7 +32,7 @@ class MaxValueEvaluator(Evaluator):
             exec(code, {}, local_ns)
 
             if "solve" not in local_ns:
-                return {"score": 0, "error_msg": "solve function not found"}
+                return {"score": 0, "metadata": {"error_msg": "solve function not found"}}
 
             solve_fn = local_ns["solve"]
 
@@ -47,7 +47,7 @@ class MaxValueEvaluator(Evaluator):
             return {"score": score}
 
         except Exception as e:
-            return {"score": 0, "error_msg": str(e)}
+            return {"score": 0, "metadata": {"error_msg": str(e)}}
 
 
 # Template program
